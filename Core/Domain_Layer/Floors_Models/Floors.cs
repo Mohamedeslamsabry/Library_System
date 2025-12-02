@@ -17,15 +17,15 @@ namespace Domain_Layer.Floors_Models
 
         #region Employee (R01) Work
 
-        [InverseProperty(nameof(employeesWork))]
+        [InverseProperty(nameof(Employee.Floors))]
         public ICollection<Employee> employeesWork { get; set; } = new HashSet<Employee>();
 
         #endregion
 
         #region Employee (R02) Mange
-        [InverseProperty(nameof(EmployeeMange))]
+        [InverseProperty(nameof(Employee.FloorsMange))]
         public Employee EmployeeMange { get; set; } = null!;
-        public int EmployeeMangeId { get; set; }
+        public int? EmployeeMangeId { get; set; }
         #endregion
 
         #region Shelf(R03) (Located)

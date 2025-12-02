@@ -8,7 +8,7 @@ namespace Domain_Layer.Borrow_Models
     public class Borrow : BaseEntity
     {
         #region Properties
-        //public DateTime DateBorrow { get; set; }  // CreatedAt Change name
+        public DateTime DateBorrow { get; set; }  
         public DateTime DueDate { get; set; }
         public int Amount { get; set; }
         #endregion

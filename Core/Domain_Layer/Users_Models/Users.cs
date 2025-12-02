@@ -9,13 +9,15 @@ namespace Domain_Layer.Users_Models
         public string User_Name { get; set; } = null!;
         public string User_Email { get; set; } = null!;
         public string User_Phone { get; set; } = null!;
+        public Gender Gender { get; set; }
+
         #endregion
 
         #region RelationShips
 
         #region Employee(R01)
         public Employee Employee { get; set; } = null!;
-        public int EmployeeId { get; set; } //Fk 
+        public int? EmployeeId { get; set; } //Fk 
         #endregion
 
         #endregion

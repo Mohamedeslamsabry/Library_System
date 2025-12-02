@@ -8,14 +8,15 @@ namespace Domain_Layer.Employee_Models
     public class Employee : BaseEntity
     {
         #region Properties
-        public string Email { get; set; } = null!;
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
+        public string Email { get; set; } = null!;
         public Address Address { get; set; } = null!;
         public DateOnly DateOfBirth { get; set; }
         public int Salary { get; set; }
         public int Bouns { get; set; }
+        public Gender Gender { get; set; }  
         #endregion
 
         #region RelationShips
@@ -26,12 +27,13 @@ namespace Domain_Layer.Employee_Models
 
         #region Floors(R02)(Work)
 
-        [InverseProperty(nameof(Floors))]
+        [InverseProperty(nameof(Floors.employeesWork))]
         public Floors Floors { get; set; } = null!;
-        public int FloorsNumber { get; set; }
+        public int? FloorsNumber { get; set; }
         #endregion
 
         #region Floors (R03) (Mange)
+        [InverseProperty(nameof(Floors.EmployeeMange))]
         public Floors FloorsMange { get; set; } = null!;
 
         #endregion
