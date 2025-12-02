@@ -564,7 +564,7 @@ namespace Persistence.Migrations
                     b.HasOne("Domain_Layer.Employee_Models.Employee", "Employee")
                         .WithMany("Users")
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Employee");
                 });

@@ -12,7 +12,7 @@ using Persistence.Data.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(LibraryDbContext))]
-    [Migration("20251202164244_EntityConfigrations")]
+    [Migration("20251202170635_EntityConfigrations")]
     partial class EntityConfigrations
     {
         /// <inheritdoc />
@@ -567,7 +567,7 @@ namespace Persistence.Migrations
                     b.HasOne("Domain_Layer.Employee_Models.Employee", "Employee")
                         .WithMany("Users")
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Employee");
                 });

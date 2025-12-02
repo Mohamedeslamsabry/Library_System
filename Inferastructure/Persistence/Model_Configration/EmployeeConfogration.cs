@@ -74,7 +74,7 @@ namespace Persistence.Model_Configration
             builder.HasMany(E => E.Users)
                 .WithOne(U => U.Employee)
                 .HasForeignKey(U => U.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasOne(E => E.Floors)
                    .WithMany(F => F.employeesWork)
@@ -91,6 +91,8 @@ namespace Persistence.Model_Configration
                    .WithMany(F => F.Subordinates)
                    .HasForeignKey(x => x.SupervisorId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+
 
 
 
