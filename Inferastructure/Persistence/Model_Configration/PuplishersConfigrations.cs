@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Puplishers_Models;
+﻿using Domain_Layer.Models.Puplishers_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

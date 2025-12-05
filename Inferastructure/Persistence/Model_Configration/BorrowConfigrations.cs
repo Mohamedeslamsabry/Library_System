@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Borrow_Models;
+﻿using Domain_Layer.Models.Borrow_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

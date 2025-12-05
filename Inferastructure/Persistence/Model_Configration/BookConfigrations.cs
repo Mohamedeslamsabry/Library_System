@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Book_Models;
+﻿using Domain_Layer.Models.Book_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

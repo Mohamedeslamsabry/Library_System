@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Authors_Models;
+﻿using Domain_Layer.Models.Authors_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

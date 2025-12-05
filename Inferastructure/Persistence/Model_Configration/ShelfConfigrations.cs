@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Shelf_Models;
+﻿using Domain_Layer.Models.Shelf_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

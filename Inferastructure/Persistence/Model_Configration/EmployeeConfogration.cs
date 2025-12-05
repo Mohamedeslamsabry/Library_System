@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Employee_Models;
+﻿using Domain_Layer.Models.Employee_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -34,7 +34,7 @@ namespace Persistence.Model_Configration
                 P.HasCheckConstraint("GymUserValidEmailCheck", "Email Like '_%@_%._%'");
                 P.HasCheckConstraint("GymUserValidPhoneNumberCheck", "PhoneNumber Like '01%' and PhoneNumber Not Like '%[^0-9]%'");
                 P.HasCheckConstraint("ValidSalary", "Salary >= 4000");
-                P.HasCheckConstraint("ValidBouns", "Bouns Between 100 and 10000");
+                //P.HasCheckConstraint("ValidBouns", "Bouns Between 100 and 10000");
             });
 
             builder.Property(M => M.FirstName)

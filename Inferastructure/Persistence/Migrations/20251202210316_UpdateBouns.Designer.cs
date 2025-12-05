@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Data.DbContexts;
 
@@ -11,16 +12,15 @@ using Persistence.Data.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(LibraryDbContext))]
-    partial class LibraryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251202210316_UpdateBouns")]
+    partial class UpdateBouns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.22")
-                .HasAnnotation("Proxies:ChangeTracking", false)
-                .HasAnnotation("Proxies:CheckEquality", false)
-                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -268,6 +268,8 @@ namespace Persistence.Migrations
                             t.HasCheckConstraint("GymUserValidEmailCheck", "Email Like '_%@_%._%'");
 
                             t.HasCheckConstraint("GymUserValidPhoneNumberCheck", "PhoneNumber Like '01%' and PhoneNumber Not Like '%[^0-9]%'");
+
+                            t.HasCheckConstraint("ValidBouns", "Bouns Between 100 and 10000");
 
                             t.HasCheckConstraint("ValidSalary", "Salary >= 4000");
                         });
@@ -587,7 +589,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain_Layer.Models.Employee_Models.Employee", b =>
                 {
-                    b.Navigation("FloorsMange");
+                    b.Navigation("FloorsMange")
+                        .IsRequired();
 
                     b.Navigation("Subordinates");
 

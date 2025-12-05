@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Categories_Models;
+﻿using Domain_Layer.Models.Categories_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

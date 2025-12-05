@@ -1,14 +1,13 @@
-﻿
-using Domain_Layer.Authors_Models;
-using Domain_Layer.Book_Authors_Models;
-using Domain_Layer.Book_Models;
-using Domain_Layer.Borrow_Models;
-using Domain_Layer.Categories_Models;
-using Domain_Layer.Employee_Models;
-using Domain_Layer.Floors_Models;
-using Domain_Layer.Puplishers_Models;
-using Domain_Layer.Shelf_Models;
-using Domain_Layer.Users_Models;
+﻿using Domain_Layer.Models.Authors_Models;
+using Domain_Layer.Models.Book_Authors_Models;
+using Domain_Layer.Models.Book_Models;
+using Domain_Layer.Models.Borrow_Models;
+using Domain_Layer.Models.Categories_Models;
+using Domain_Layer.Models.Employee_Models;
+using Domain_Layer.Models.Floors_Models;
+using Domain_Layer.Models.Puplishers_Models;
+using Domain_Layer.Models.Shelf_Models;
+using Domain_Layer.Models.Users_Models;
 using Microsoft.EntityFrameworkCore;
 using System.Numerics;
 using System.Reflection;

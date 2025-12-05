@@ -1,4 +1,4 @@
-﻿using Domain_Layer.Floors_Models;
+﻿using Domain_Layer.Models.Floors_Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
