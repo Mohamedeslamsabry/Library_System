@@ -56,21 +56,17 @@ namespace Service_Implemention.Mapper
             CreateMap<Address, AddressDTO>().ReverseMap();
             #endregion
 
-
-
-
+            #region Create Employee
             // CreateEmployeeDto -> Employee
             CreateMap<CreateOrUpdateEmployeeDTO, Employee>();
-                // كوّن Address من حقول الـDTO المسطّحة
-                //.ForMember(d => d.Address, opt => opt.MapFrom((src, dest) => new Address
-                //{
-                //    Country = src.Country,
-                //    City = src.City,
-                //    BuildingNumber = src.BuildingNumber
-                //}));
-              
-
-
+            // كوّن Address من حقول الـDTO المسطّحة
+            //.ForMember(d => d.Address, opt => opt.MapFrom((src, dest) => new Address
+            //{
+            //    Country = src.Country,
+            //    City = src.City,
+            //    BuildingNumber = src.BuildingNumber
+            //})); 
+            #endregion
 
         }
 

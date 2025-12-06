@@ -53,17 +53,27 @@ namespace Persistence.Model_Configration
                 Address.WithOwner();
 
                 Address.Property(a => a.City)
-                .HasColumnName("city")
-                .HasColumnType("varchar")
-                .HasMaxLength(30);
+                       .HasColumnName("city")
+                       .HasColumnType("varchar")
+                       .HasMaxLength(30);
 
                 Address.Property(a => a.Country)
-                .HasColumnName("Street")
-                .HasColumnType("varchar")
-                .HasMaxLength(30);
+                       .HasColumnName("Country")
+                       .HasColumnType("varchar")
+                       .HasMaxLength(30);
+
+                Address.Property(a => a.Street)
+                       .HasColumnName("Street")
+                       .HasColumnType("varchar")
+                       .HasMaxLength(30);
+
+                Address.Property(a => a.Area)
+                       .HasColumnName("Area")
+                       .HasColumnType("varchar")
+                       .HasMaxLength(30);
 
                 Address.Property(a => a.BuildingNumber)
-                .HasColumnName("BuildingNumber");
+                       .HasColumnName("BuildingNumber");
 
             });
 
