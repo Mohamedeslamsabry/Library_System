@@ -1,0 +1,62 @@
+[
+    {
+        "CategoryName": "Fiction"
+    },
+    {
+        "CategoryName": "Non-Fiction"
+    },
+    {
+        "CategoryName": "Science"
+    },
+    {
+        "CategoryName": "Technology"
+    },
+    {
+        "CategoryName": "History"
+    },
+    {
+        "CategoryName": "Biography"
+    },
+    {
+        "CategoryName": "Philosophy"
+    },
+    {
+        "CategoryName": "Psychology"
+    },
+    {
+        "CategoryName": "Art"
+    },
+    {
+        "CategoryName": "Music"
+    },
+    {
+        "CategoryName": "Literature"
+    },
+    {
+        "CategoryName": "Poetry"
+    },
+    {
+        "CategoryName": "Religion"
+    },
+    {
+        "CategoryName": "Education"
+    },
+    {
+        "CategoryName": "Business"
+    },
+    {
+        "CategoryName": "Economics"
+    },
+    {
+        "CategoryName": "Travel"
+    },
+    {
+        "CategoryName": "Health & Fitness"
+    },
+    {
+        "CategoryName": "Children's Books"
+    },
+    {
+        "CategoryName": "Comics & Graphic Novels"
+    }
+]
