@@ -83,8 +83,6 @@ namespace Shared.DTO
         //// رقم الدور للعرض فقط (لو بتسجّله مع الإنشاء)
         //public int? FloorsNumber { get; set; }
 
-        // R03: هل الموظف يدير دور بعينه؟
-        public int? floorMangeNumber { get; set; }
 
         // R04: المشرف (Self-Reference)
         public int? SupervisorId { get; set; }

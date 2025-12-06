@@ -1,7 +1,9 @@
+using Domain_Layer.Contract.Seeding;
 using Domain_Layer.Contract.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data.DbContexts;
 using Persistence.Implment_repo;
+using Persistence.Seeding;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Mapper;
 using Service_Implemention.Service;
@@ -10,7 +12,7 @@ namespace Library.Web
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +31,7 @@ namespace Library.Web
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+            builder.Services.AddScoped<IDataSeeding, DataSeeding>();
 
 
 
@@ -37,6 +40,14 @@ namespace Library.Web
             #endregion
 
             var app = builder.Build();
+
+            #region Seeding
+            using var Scope = app.Services.CreateScope();
+            var ObjOfDataSeeding = Scope.ServiceProvider.GetRequiredService<IDataSeeding>();
+
+            await ObjOfDataSeeding.DataSeedAsync();
+            //await ObjOfDataSeeding.IdentityDataSeedingAsync();
+            #endregion
 
             #region  Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

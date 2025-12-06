@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
-using AutoMapper.Execution;
 using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
-using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
 using Shared.DTO;
-using System.Drawing;
 
 namespace Service_Implemention.Service
 {
@@ -51,30 +48,14 @@ namespace Service_Implemention.Service
                 }
                 var employee = _mapper.Map<CreateOrUpdateEmployeeDTO, Employee>(createEmployee);
 
-                // ✅ Business Rule: الاسم مطلوب
-                if (string.IsNullOrWhiteSpace(createEmployee.FirstName))
-                    throw new ArgumentException("Employee name is required.");
-
-
-                //// ✅ Business Rule: المدير لا يمكن أن يكون نفسه
-                //if (createEmployee.SupervisorId.HasValue && createEmployee.SupervisorId == employee.SupervisorId)
-                //    throw new ArgumentException("Employee cannot be their own supervisor.");
-
-
 
                 // ✅ تحقق من وجود المدير لو تم إدخاله
                 if (createEmployee.SupervisorId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createEmployee.SupervisorId))
                     throw new ArgumentException("Supervisor does not exist.");
 
                 // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (createEmployee.floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.FloorsNumber == createEmployee.floorsNumberWork))
+                if (createEmployee.floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == createEmployee.floorsNumberWork))
                     throw new ArgumentException("Floor does not exist.");
-
-                // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (createEmployee.floorMangeNumber.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.FloorsNumber == createEmployee.floorMangeNumber))
-                    throw new ArgumentException("Floor does not exist.");
-
-
 
                 await _unitOfWork.GetRepoartory<Employee>().AddAsync(employee);
                 var isCreated = await _unitOfWork.SaveChangesAsync() > 0;
@@ -101,35 +82,25 @@ namespace Service_Implemention.Service
         {
             try
             {
+
+                bool EmailIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.Email == updateEmployee.Email && X.Id != id).Result.Any();
+                bool PhoneIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.PhoneNumber == updateEmployee.PhoneNumber && X.Id != id).Result.Any();
+                if (EmailIsExist || PhoneIsExist)
+                {
+                    return false;
+                }
+
                 var Repo = _unitOfWork.GetRepoartory<Employee>();
                 var Employee = await Repo.GetByIdAsync(id);
                 if (Employee is null) { return false; }
-
-
-
 
                 // ✅ تحقق من وجود المدير لو تم إدخاله
                 if (updateEmployee.SupervisorId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateEmployee.SupervisorId))
                     throw new ArgumentException("Supervisor does not exist.");
 
                 // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (updateEmployee. floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.FloorsNumber == updateEmployee.floorsNumberWork))
+                if (updateEmployee.floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == updateEmployee.floorsNumberWork))
                     throw new ArgumentException("Floor does not exist.");
-
-                // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (updateEmployee.floorMangeNumber.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.FloorsNumber == updateEmployee.floorMangeNumber))
-                    throw new ArgumentException("Floor does not exist.");
-
-
-                //var Floor = _unitOfWork.GetRepoartory<Floors>().GetAllAsync(F => F.Id == updateEmployee.floorMangeNumber!.Value).Result.FirstOrDefault();
-                //if (Floor is null) { return false; }
-
-                //if (updateEmployee.floorMangeNumber.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.FloorsNumber == updateEmployee.floorMangeNumber))
-                //    throw new ArgumentException("Floor does not exist.");
-
-
-
-
 
 
                 _mapper.Map(updateEmployee, Employee);

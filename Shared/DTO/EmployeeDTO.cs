@@ -1,7 +1,4 @@
-﻿using System.Net;
-using System.Reflection;
-
-namespace Shared.DTO
+﻿namespace Shared.DTO
 {
     public class EmployeeDTO
     {

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Service_Abstraction.Interfaces;
 using Shared;
 using Shared.DTO;
@@ -32,7 +31,7 @@ namespace Presentiton
 
         #region Create Employee
         [HttpPost("Create")]
-        public async Task<ActionResult<EmployeeDTO>> CreateEmployee([FromBody] CreateOrUpdateEmployeeDTO createEmployeeDTO)
+        public async Task<ActionResult<bool>> CreateEmployee([FromBody] CreateOrUpdateEmployeeDTO createEmployeeDTO)
         {
             var employee = await _employeeService.CreateAsync(createEmployeeDTO);
             return Ok(employee);
@@ -41,9 +40,9 @@ namespace Presentiton
 
         #region Update Employee
         [HttpPut("Update/{id:int}")]
-        public async Task<ActionResult<bool>> UpdateEmployee([FromRoute] int id,CreateOrUpdateEmployeeDTO updateEmployeeDTO)
+        public async Task<ActionResult<bool>> UpdateEmployee([FromRoute] int id, CreateOrUpdateEmployeeDTO updateEmployeeDTO)
         {
-            var employee = await _employeeService.UpdateAsync(id,updateEmployeeDTO);
+            var employee = await _employeeService.UpdateAsync(id, updateEmployeeDTO);
             return Ok(employee);
         }
         #endregion
@@ -51,7 +50,7 @@ namespace Presentiton
         #region DeleteEmployee
 
         [HttpDelete("Delete/{id:int}")]
-        public async Task<ActionResult<bool>> DeleteEmployee([FromRoute]int id)
+        public async Task<ActionResult<bool>> DeleteEmployee([FromRoute] int id)
         {
             var employee = await _employeeService.DeleteAsync(id);
             return Ok(employee);

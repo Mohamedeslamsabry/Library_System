@@ -16,7 +16,7 @@ namespace Domain_Layer.Models.Employee_Models
         public DateOnly DateOfBirth { get; set; }
         public int Salary { get; set; }
         public int? Bouns { get; set; }
-        public Gender Gender { get; set; }  
+        public Gender Gender { get; set; }
         #endregion
 
         #region RelationShips
@@ -28,7 +28,7 @@ namespace Domain_Layer.Models.Employee_Models
         #region Floors(R02)(Work)
 
         [InverseProperty(nameof(Floors.employeesWork))]
-        public virtual Floors? Floors { get; set; } 
+        public virtual Floors? Floors { get; set; }
         public int? FloorsNumber { get; set; }
         #endregion
 
