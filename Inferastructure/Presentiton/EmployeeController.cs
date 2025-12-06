@@ -31,7 +31,7 @@ namespace Presentiton
 
         #region Create Employee
         [HttpPost("Create")]
-        public async Task<ActionResult<bool>> CreateEmployee([FromBody] CreateOrUpdateEmployeeDTO createEmployeeDTO)
+        public async Task<ActionResult<CreateOrUpdateEmployeeDTO>> CreateEmployee([FromBody] CreateOrUpdateEmployeeDTO createEmployeeDTO)
         {
             var employee = await _employeeService.CreateAsync(createEmployeeDTO);
             return Ok(employee);
@@ -40,7 +40,7 @@ namespace Presentiton
 
         #region Update Employee
         [HttpPut("Update/{id:int}")]
-        public async Task<ActionResult<bool>> UpdateEmployee([FromRoute] int id, CreateOrUpdateEmployeeDTO updateEmployeeDTO)
+        public async Task<ActionResult<CreateOrUpdateEmployeeDTO>> UpdateEmployee([FromRoute] int id, CreateOrUpdateEmployeeDTO updateEmployeeDTO)
         {
             var employee = await _employeeService.UpdateAsync(id, updateEmployeeDTO);
             return Ok(employee);

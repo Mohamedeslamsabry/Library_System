@@ -30,6 +30,15 @@ namespace Service_Implemention.Service
         #region GetByIdAsync
         public async Task<EmployeeDTO?> GetByIdAsync(int id)
         {
+            #region  Include By Specification
+            //var Specification = new EmployeeSpecifcation(id);
+            //var Employee = await _unitOfWork.GetRepoartory<Employee>().GetByIdAsync(Specification);
+            //if (Employee is null)
+            //{
+            //    return null!;
+            //}
+            //return _mapper.Map<EmployeeDTO>(Employee);
+            #endregion
             var employee = await _unitOfWork.GetRepoartory<Employee>().GetByIdAsync(id);
             return employee == null ? null : _mapper.Map<EmployeeDTO>(employee);
         }

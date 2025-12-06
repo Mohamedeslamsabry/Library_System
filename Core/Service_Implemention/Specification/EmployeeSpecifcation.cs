@@ -6,11 +6,11 @@ namespace Service_Implemention.Specification
     public class EmployeeSpecifcation : BaseSpecification<Employee>
     {
         public EmployeeSpecifcation(EmployeeQueryParamter employeeQuery) :
-            base (P => string.IsNullOrEmpty(employeeQuery.search) || P.FirstName.ToLower().Contains(employeeQuery.search.ToLower()))
-            
+            base(P => string.IsNullOrEmpty(employeeQuery.search) || P.FirstName.ToLower().Contains(employeeQuery.search.ToLower()))
+
 
         {
-           
+
 
             switch (employeeQuery.sort)
             {
@@ -33,6 +33,10 @@ namespace Service_Implemention.Specification
             ApplyPagention(employeeQuery.pageSize, employeeQuery.PageIndex);
         }
 
-       
+        //public EmployeeSpecifcation(int id) : base(E => E.Id == id)
+        //{
+        //    AddInclude(E => E.Floors);
+        //    AddInclude(E => E.FloorsMange);
+        //}
     }
 }

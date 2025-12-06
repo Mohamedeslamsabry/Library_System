@@ -33,6 +33,7 @@ namespace Domain_Layer.Contract.Genric_Repo
 
         #region specification
         Task<IEnumerable<TEntity>> GetAllAsync(ISpecification<TEntity> specification);
+        //Task<TEntity?> GetByIdAsync(ISpecification<TEntity> specification);
 
         Task<int> CountAsync(ISpecification<TEntity> specification);
         #endregion
