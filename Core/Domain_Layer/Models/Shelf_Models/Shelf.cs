@@ -19,8 +19,8 @@ namespace Domain_Layer.Models.Shelf_Models
         #endregion
 
         #region Book (R02) Assigned
-        public virtual ICollection<Book> Book { get; set; } = new HashSet<Book>();  
-      
+        public virtual ICollection<Book> Book { get; set; } = new HashSet<Book>();
+
         #endregion
 
         #endregion

@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
 using Domain_Layer.Models.Employee_Models;
+using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shared;
 using Shared.DTO;
+using Shared.DTO.Floor;
+using System.Drawing;
 
 namespace Service_Implemention.Mapper
 {
@@ -56,7 +59,7 @@ namespace Service_Implemention.Mapper
             CreateMap<Address, AddressDTO>().ReverseMap();
             #endregion
 
-            #region Create Employee
+            #region Create Or Update Employee
             // CreateEmployeeDto -> Employee
             CreateMap<CreateOrUpdateEmployeeDTO, Employee>();
             // كوّن Address من حقول الـDTO المسطّحة
@@ -66,6 +69,45 @@ namespace Service_Implemention.Mapper
             //    City = src.City,
             //    BuildingNumber = src.BuildingNumber
             //})); 
+            #endregion
+
+            #region Get Floors
+
+            // Entity -> DTO
+            CreateMap<Floors, FloorDTO>()
+                // نفس تسمية الخاصية في الـ DTO (Number_of_Blocks)
+                .ForMember(d => d.Number_of_Blocks,
+                    opt => opt.MapFrom(s => s.Number_of_Blocks))
+
+                // المدير (Id + Name)
+                .ForMember(d => d.ManagerId,
+                    opt => opt.MapFrom(s => s.EmployeeMangeId))
+                .ForMember(d => d.ManagerName,
+                    opt => opt.MapFrom(s => s.EmployeeMange != null ? $"{s.EmployeeMange.FirstName}_{s.EmployeeMange.LastName}" : null))
+
+                // العدّادات
+                .ForMember(d => d.EmployeesWorkCount,
+                    opt => opt.MapFrom(s => s.employeesWork.Count))
+                .ForMember(d => d.ShelvesCount,
+                    opt => opt.MapFrom(s => s.Shelfs.Count))
+
+                // قائمة الموظفين المختصرة
+                .ForMember(d => d.EmployeesWork,
+                    opt => opt.MapFrom(s => s.employeesWork));
+
+            // Sub DTO: Employee -> EmployeeBriefDto
+            CreateMap<Employee, EmployeeBriefDto>()
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{ s.FirstName}_{s.LastName}")) 
+                .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s=>s.PhoneNumber));
+
+
+            #endregion
+
+            #region Create Or Update Floor
+
+            CreateMap<CreateOrUpdateFloorDTO, Floors>()
+                       .ForMember(s => s.Number_of_Blocks, opt => opt.MapFrom(d => d.Number_of_Blocks))
+                       .ForMember(s => s.EmployeeMangeId, opt => opt.MapFrom(d => d.ManagerId));
             #endregion
 
         }

@@ -50,7 +50,7 @@ namespace Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Authors");
+                    b.ToTable("Authors", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Book_Authors_Models.Book_Authors", b =>
@@ -75,7 +75,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Book_Authors");
+                    b.ToTable("Book_Authors", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Book_Models.Book", b =>
@@ -118,7 +118,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("puplisherId");
 
-                    b.ToTable("Books");
+                    b.ToTable("Books", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Borrow_Models.Borrow", b =>
@@ -159,7 +159,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Borrows", t =>
+                    b.ToTable("Borrows", null, t =>
                         {
                             t.HasCheckConstraint("CheckDate", "DateBorrow > DueDate");
 
@@ -192,7 +192,7 @@ namespace Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Employee_Models.Employee", b =>
@@ -263,7 +263,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("SupervisorId");
 
-                    b.ToTable("Employees", t =>
+                    b.ToTable("Employees", null, t =>
                         {
                             t.HasCheckConstraint("GymUserValidEmailCheck", "Email Like '_%@_%._%'");
 
@@ -305,7 +305,7 @@ namespace Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[EmployeeMangeId] IS NOT NULL");
 
-                    b.ToTable("Floors");
+                    b.ToTable("Floors", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Puplishers_Models.Puplishers", b =>
@@ -333,7 +333,7 @@ namespace Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Puplishers");
+                    b.ToTable("Puplishers", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Shelf_Models.Shelf", b =>
@@ -362,7 +362,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("FloorNumber");
 
-                    b.ToTable("Shelves");
+                    b.ToTable("Shelves", (string)null);
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Users_Models.Users", b =>
@@ -407,7 +407,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Users", t =>
+                    b.ToTable("Users", null, t =>
                         {
                             t.HasCheckConstraint("GymUserValidEmailCheck", "User_Email Like '_%@_%._%'")
                                 .HasName("GymUserValidEmailCheck1");
@@ -502,7 +502,7 @@ namespace Persistence.Migrations
                         .HasForeignKey("SupervisorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.OwnsOne("Domain_Layer.Models.Shared.Address", "Address", b1 =>
+                    b.OwnsOne("Domain_Layer.Models.Employee_Models.Employee.Address#Domain_Layer.Models.Shared.Address", "Address", b1 =>
                         {
                             b1.Property<int>("EmployeeId")
                                 .HasColumnType("int");
@@ -537,7 +537,7 @@ namespace Persistence.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees");
+                            b1.ToTable("Employees", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");

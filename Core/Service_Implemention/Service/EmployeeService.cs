@@ -2,6 +2,7 @@
 using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
+using Domain_Layer.Models.Users_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
@@ -135,9 +136,31 @@ namespace Service_Implemention.Service
                 if (Employee.Subordinates.Any())
                     throw new InvalidOperationException("Cannot delete employee with subordinates.");
 
+                // ✅ Business Rule: 
+                if (Employee.Users.Any())
+                {
+                    foreach (var User in Employee.Users)
+                    {
+                        User.EmployeeId = null;
+                    }
+                }
+
+                //// ✅ Business Rule: 
+
+                if(Employee.FloorsMange is not null)
+                {
+                    if (Employee.FloorsMange.EmployeeMangeId != null)
+                    {
+                        if (Employee.FloorsMange!.EmployeeMangeId == Employee.Id)
+                        {
+                            Employee.FloorsMange.EmployeeMangeId = null;
+                        }
+                    }
+                }
+
                 _unitOfWork.GetRepoartory<Employee>().Remove(Employee);
-                var IsRemoved = await _unitOfWork.SaveChangesAsync() > 0;
-                return IsRemoved;
+                    var IsRemoved = await _unitOfWork.SaveChangesAsync() > 0;
+                    return IsRemoved;
             }
             catch (Exception)
             {
