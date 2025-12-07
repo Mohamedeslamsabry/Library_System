@@ -117,13 +117,13 @@ namespace Service_Implemention.Service
                     }
                 }
 
-                //if (Floor.Shelfs.Any())
-                //{
-                //    foreach (var Shelf in Floor.Shelfs)
-                //    {
-                //        _UnitOfWork.GetRepoartory<Shelf>().Remove(Shelf);
-                //    }
-                //}
+                if (Floor.Shelfs.Any())
+                {
+                    foreach (var Shelf in Floor.Shelfs)
+                    {
+                        Shelf.FloorNumber = null;
+                    }
+                }
 
                 _UnitOfWork.GetRepoartory<Floors>().Remove(Floor);
                 var IsRemoved = await _UnitOfWork.SaveChangesAsync() > 0;

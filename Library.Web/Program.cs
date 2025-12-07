@@ -33,6 +33,7 @@ namespace Library.Web
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IDataSeeding, DataSeeding>();
             builder.Services.AddScoped<IFloorService, FloorService>();
+            builder.Services.AddScoped<IShelfService, ShelfService>();
 
 
 

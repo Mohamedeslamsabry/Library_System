@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
+using Domain_Layer.Models.Book_Models;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shared;
-using Shared.DTO;
+using Domain_Layer.Models.Shelf_Models;
+using Shared.DTO.Employee;
 using Shared.DTO.Floor;
+using Shared.DTO.Shelf;
 using System.Drawing;
 
 namespace Service_Implemention.Mapper
@@ -110,7 +113,37 @@ namespace Service_Implemention.Mapper
                        .ForMember(s => s.EmployeeMangeId, opt => opt.MapFrom(d => d.ManagerId));
             #endregion
 
+            #region Get Shelf
+
+            // Shelf -> ShelfDetailsDTO (تفاصيل)
+            CreateMap<Shelf, ShelfDTO>()
+                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+                .ForMember(d => d.FloorNumber, opt => opt.MapFrom(s => s.FloorNumber))
+                .ForMember(d => d.BooksCount, opt => opt.MapFrom(s => s.Book.Count))
+                .ForMember(d => d.Books, opt => opt.MapFrom(s => s.Book))
+                .ForMember(d => d.Floor, opt => opt.MapFrom(s => s.Floor));
+
+            // Sub mappings
+            CreateMap<Book, BookBriefDto>()
+                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+                .ForMember(d => d.Title, opt => opt.MapFrom(s => s.TiTle));
+
+            CreateMap<Floors, FloorBriefDto>()
+                       .ForMember(d => d.FloorNumber, opt => opt.MapFrom(s => s.Id))
+                       .ForMember(d => d.Number_of_Blocks, opt => opt.MapFrom(s => s.Number_of_Blocks));
+
+
+
+            #endregion
+
+            #region Create Or Update Shelf
+            CreateMap<CreateOrUpdateShelfDTO, Shelf>(); 
+            #endregion
+
         }
 
+
     }
+
 }
+

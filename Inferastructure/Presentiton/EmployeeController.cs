@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Service_Abstraction.Interfaces;
 using Shared;
-using Shared.DTO;
+using Shared.DTO.Employee;
 
 namespace Presentiton
 {

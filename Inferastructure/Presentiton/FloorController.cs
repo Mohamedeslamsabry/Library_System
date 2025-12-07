@@ -21,7 +21,7 @@ namespace Presentiton
 
         #region Get Floor By Id
         [HttpGet("{FloorNumber}")]
-        public async Task<ActionResult<FloorDTO>> GetEmployeeById(int FloorNumber)
+        public async Task<ActionResult<FloorDTO>> GetShelfById(int FloorNumber)
         {
             var Floor = await _floorService.GetByIdAsync(FloorNumber);
             return Ok(Floor);
@@ -30,7 +30,7 @@ namespace Presentiton
 
         #region Create Floor
         [HttpPost("Create")]
-        public async Task<ActionResult<CreateOrUpdateFloorDTO>> CreateEmployee([FromBody] CreateOrUpdateFloorDTO CreateFloorDto)
+        public async Task<ActionResult<CreateOrUpdateFloorDTO>> CreateShelf([FromBody] CreateOrUpdateFloorDTO CreateFloorDto)
         {
             var Floor = await _floorService.CreateAsync(CreateFloorDto);
             return Ok(Floor);
@@ -39,7 +39,7 @@ namespace Presentiton
 
         #region Update Floor
         [HttpPut("Update/{FloorNumber:int}")]
-        public async Task<ActionResult<CreateOrUpdateFloorDTO>> UpdateEmployee([FromRoute] int FloorNumber, CreateOrUpdateFloorDTO updateFloorDTO)
+        public async Task<ActionResult<CreateOrUpdateFloorDTO>> UpdateFloor([FromRoute] int FloorNumber, CreateOrUpdateFloorDTO updateFloorDTO)
         {
             var Floor = await _floorService.UpdateAsync(FloorNumber, updateFloorDTO);
             return Ok(Floor);
@@ -49,7 +49,7 @@ namespace Presentiton
         #region Delete Floor
 
         [HttpDelete("Delete/{FloorNumber:int}")]
-        public async Task<ActionResult<bool>> DeleteEmployee([FromRoute] int FloorNumber)
+        public async Task<ActionResult<bool>> DeleteFloor([FromRoute] int FloorNumber)
         {
             var Floor = await _floorService.DeleteAsync(FloorNumber);
             return Ok(Floor);

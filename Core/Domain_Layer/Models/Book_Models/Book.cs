@@ -17,7 +17,7 @@ namespace Domain_Layer.Models.Book_Models
 
         #region Shelf(R01) Assigned
         public virtual Shelf Shelf { get; set; } = null!;
-        public int ShelfId { get; set; }
+        public int? ShelfId { get; set; }
         #endregion
 
         #region Book_Authors (R02) (Own)

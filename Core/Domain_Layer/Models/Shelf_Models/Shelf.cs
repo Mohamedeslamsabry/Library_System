@@ -15,7 +15,7 @@ namespace Domain_Layer.Models.Shelf_Models
 
         #region Floors (R01) (Located)
         public virtual Floors Floor { get; set; } = null!;
-        public int FloorNumber { get; set; }
+        public int? FloorNumber { get; set; }
         #endregion
 
         #region Book (R02) Assigned

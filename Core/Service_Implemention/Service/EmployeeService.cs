@@ -6,7 +6,7 @@ using Domain_Layer.Models.Users_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
-using Shared.DTO;
+using Shared.DTO.Employee;
 
 namespace Service_Implemention.Service
 {
