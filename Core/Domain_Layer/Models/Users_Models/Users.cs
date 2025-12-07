@@ -1,4 +1,5 @@
-﻿using Domain_Layer.Models.Employee_Models;
+﻿using Domain_Layer.Models.Borrow_Models;
+using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Shared;
 
 namespace Domain_Layer.Models.Users_Models
@@ -18,6 +19,10 @@ namespace Domain_Layer.Models.Users_Models
         #region Employee(R01)
         public virtual Employee Employee { get; set; } = null!;
         public int? EmployeeId { get; set; } //Fk 
+        #endregion
+
+        #region Borrow
+        public virtual ICollection<Borrow> Borrows { get; set; } = new HashSet<Borrow>();
         #endregion
 
         #endregion

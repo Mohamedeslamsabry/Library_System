@@ -18,7 +18,7 @@ namespace Domain_Layer.Models.Borrow_Models
         #region Tiranry
 
         #region Employee (R01)
-        public int EmployeeId { get; set; }
+        public int? EmployeeId { get; set; }
         public virtual Employee Employee { get; set; } = null!;
         #endregion
 

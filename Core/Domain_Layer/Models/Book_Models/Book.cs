@@ -1,4 +1,5 @@
 ﻿using Domain_Layer.Models.Book_Authors_Models;
+using Domain_Layer.Models.Borrow_Models;
 using Domain_Layer.Models.Categories_Models;
 using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
@@ -32,7 +33,11 @@ namespace Domain_Layer.Models.Book_Models
         #region Puplishers (R04) Have
         public virtual Puplishers puplisher { get; set; } = null!;
         public int puplisherId { get; set; }
-        #endregion  
+        #endregion
+
+        #region Borrow
+        public virtual Borrow? Borrow { get; set; }
+        #endregion
 
         #endregion
     }

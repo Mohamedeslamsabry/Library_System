@@ -132,11 +132,16 @@ namespace Service_Implemention.Service
                 var Employee = await _unitOfWork.GetRepoartory<Employee>().GetByIdAsync(id);
                 if (Employee is null) { return false; }
 
-                // ✅ Business Rule: لا تحذف لو عنده مرؤوسين
+                // ✅ Business Rule: Subordinates
                 if (Employee.Subordinates.Any())
-                    throw new InvalidOperationException("Cannot delete employee with subordinates.");
+                {
+                    foreach (var employee in Employee.Subordinates)
+                    {
+                        employee.SupervisorId = null;
+                    }
+                }
 
-                // ✅ Business Rule: 
+                // ✅ Business Rule: Users
                 if (Employee.Users.Any())
                 {
                     foreach (var User in Employee.Users)
@@ -145,7 +150,7 @@ namespace Service_Implemention.Service
                     }
                 }
 
-                //// ✅ Business Rule: 
+                //// ✅ Business Rule: Floor
 
                 if(Employee.FloorsMange is not null)
                 {
@@ -158,6 +163,14 @@ namespace Service_Implemention.Service
                     }
                 }
 
+                // ✅ Business Rule: Users
+                if (Employee.Borrows.Any())
+                {
+                    foreach (var emp in Employee.Borrows)
+                    {
+                        emp.EmployeeId = null;
+                    }
+                }
                 _unitOfWork.GetRepoartory<Employee>().Remove(Employee);
                     var IsRemoved = await _unitOfWork.SaveChangesAsync() > 0;
                     return IsRemoved;

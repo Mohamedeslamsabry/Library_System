@@ -108,7 +108,7 @@ namespace Service_Implemention.Service
                 var Floor = await _UnitOfWork.GetRepoartory<Floors>().GetByIdAsync(FloorNumber);
                 if (Floor is null) { return false; }
 
-                //Bussniess Role
+                //Bussniess Role Employee
                 if (Floor.employeesWork.Any())
                 {
                     foreach (var Employee in Floor.employeesWork)
