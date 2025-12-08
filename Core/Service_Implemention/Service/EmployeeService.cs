@@ -163,7 +163,7 @@ namespace Service_Implemention.Service
                     }
                 }
 
-                // ✅ Business Rule: Users
+                // ✅ Business Rule: Borrows
                 if (Employee.Borrows.Any())
                 {
                     foreach (var emp in Employee.Borrows)

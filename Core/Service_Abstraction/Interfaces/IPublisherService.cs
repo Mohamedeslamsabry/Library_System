@@ -1,11 +1,12 @@
-﻿using Shared.DTO.Publisher;
+﻿using Shared;
+using Shared.DTO.Publisher;
 
 namespace Service_Abstraction.Interfaces
 {
     public interface IPublisherService
     {
         #region GetAllAsync
-        Task<IEnumerable<PublisherDTO>> GetAllAsync();
+        Task<PaginatedResult<PublisherDTO>> GetAllAsync(PublisherQueryParamter publisherQuery);
         #endregion
 
         #region GetByIdAsync

@@ -5,10 +5,12 @@ using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
 using Domain_Layer.Models.Shelf_Models;
+using Domain_Layer.Models.Users_Models;
 using Shared.DTO.Employee;
 using Shared.DTO.Floor;
 using Shared.DTO.Publisher;
 using Shared.DTO.Shelf;
+using Shared.DTO.User;
 using System.Drawing;
 
 namespace Service_Implemention.Mapper
@@ -154,10 +156,26 @@ namespace Service_Implemention.Mapper
             CreateMap<Book, BookShortDto>();
 
             #endregion
+
+            #region User
+
+            CreateMap<Users, UserDTO>()
+                .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.Gender.ToString()))
+                 .ForMember(d => d.Employee, opt => opt.MapFrom(s => s.Employee));
+
+
+            CreateMap<CreateOrUpdateUserDTO, Users>();
+                      
+
+            // اختياري: خريطة الموظف المختصر
+            CreateMap<Employee, EmployeeShortDto>()
+                           .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}")); 
         }
 
 
+        #endregion
     }
-
 }
+
+
 

@@ -5,6 +5,9 @@ using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shelf_Models;
 using Service_Abstraction.Interfaces;
+using Service_Implemention.Specification;
+using Shared;
+using Shared.DTO.Employee;
 using Shared.DTO.Floor;
 using Shared.DTO.Publisher;
 
@@ -13,17 +16,27 @@ namespace Service_Implemention.Service
     public class PublisherService(IUnitOfWork _UnitOfWork, IMapper _mapper) : IPublisherService
     {
         #region GetAllAsync
-        public async Task<IEnumerable<PublisherDTO>> GetAllAsync()
+        public async Task<PaginatedResult<PublisherDTO>> GetAllAsync(PublisherQueryParamter publisherQuery)
         {
-            var Publisher = await _UnitOfWork.GetRepoartory<Puplishers>().GetAllAsync();
-            if (Publisher is null)
-            {
-                return Enumerable.Empty<PublisherDTO>();
-            }
-            else
-            {
-                return _mapper.Map<IEnumerable<Puplishers>, IEnumerable<PublisherDTO>>(Publisher);
-            }
+            var Specification = new PublisherSpecifcation(publisherQuery);
+            var publisher = await _UnitOfWork.GetRepoartory<Puplishers>().GetAllAsync(Specification);
+            var publisherDto =  _mapper.Map<IEnumerable<Puplishers>, IEnumerable<PublisherDTO>>(publisher);
+
+            #region Paggention
+            var spec = new PublisherCountSpecifcation(publisherQuery);
+            var TotalCount = await _UnitOfWork.GetRepoartory<Puplishers>().CountAsync(spec);
+            #endregion
+
+            return new PaginatedResult<PublisherDTO>(TotalCount, publisher.Count(), publisherQuery.PageIndex, publisherDto);
+            //var Publisher = await _UnitOfWork.GetRepoartory<Puplishers>().GetAllAsync();
+            //if (Publisher is null)
+            //{
+            //    return Enumerable.Empty<PublisherDTO>();
+            //}
+            //else
+            //{
+            //    return _mapper.Map<IEnumerable<Puplishers>, IEnumerable<PublisherDTO>>(Publisher);
+            //}
         }
 
         #endregion
