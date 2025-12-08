@@ -2,10 +2,12 @@
 using Domain_Layer.Models.Book_Models;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
+using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
 using Domain_Layer.Models.Shelf_Models;
 using Shared.DTO.Employee;
 using Shared.DTO.Floor;
+using Shared.DTO.Publisher;
 using Shared.DTO.Shelf;
 using System.Drawing;
 
@@ -137,9 +139,21 @@ namespace Service_Implemention.Mapper
             #endregion
 
             #region Create Or Update Shelf
-            CreateMap<CreateOrUpdateShelfDTO, Shelf>(); 
+            CreateMap<CreateOrUpdateShelfDTO, Shelf>();
             #endregion
 
+            #region  Publishers
+
+            CreateMap<Puplishers, PublisherDTO>()
+                        .ForMember(d => d.Books, opt => opt.MapFrom(s => s.Book));
+
+
+            CreateMap<CreateOrUpdatePublisherDTO, Puplishers>();
+
+
+            CreateMap<Book, BookShortDto>();
+
+            #endregion
         }
 
 

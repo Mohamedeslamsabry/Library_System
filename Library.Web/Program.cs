@@ -34,6 +34,7 @@ namespace Library.Web
             builder.Services.AddScoped<IDataSeeding, DataSeeding>();
             builder.Services.AddScoped<IFloorService, FloorService>();
             builder.Services.AddScoped<IShelfService, ShelfService>();
+            builder.Services.AddScoped<IPublisherService, PublisherService>();
 
 
 
