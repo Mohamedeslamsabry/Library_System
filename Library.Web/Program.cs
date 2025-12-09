@@ -37,6 +37,7 @@ namespace Library.Web
             builder.Services.AddScoped<IPublisherService, PublisherService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IBookService, BookService>();
+            builder.Services.AddScoped<IAuthorsService, AuthorService>();
 
 
 

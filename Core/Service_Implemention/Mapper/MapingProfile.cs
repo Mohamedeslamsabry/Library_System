@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Domain_Layer.Models.Authors_Models;
 using Domain_Layer.Models.Book_Authors_Models;
 using Domain_Layer.Models.Book_Models;
 using Domain_Layer.Models.Employee_Models;
@@ -7,6 +8,7 @@ using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
 using Domain_Layer.Models.Shelf_Models;
 using Domain_Layer.Models.Users_Models;
+using Shared.DTO.authors;
 using Shared.DTO.Book;
 using Shared.DTO.Employee;
 using Shared.DTO.Floor;
@@ -225,6 +227,23 @@ namespace Service_Implemention.Mapper
                                });
                            }
                        });
+            #endregion
+
+            #region authors
+
+            CreateMap<Authors, AuthorDTO>()
+                      .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Auth_Name))
+                      .ForMember(d => d.BooksCount, opt => opt.MapFrom(s => s.Book_Authors != null ? s.Book_Authors.Count : 0))
+                      .ForMember(d => d.BookIds, opt => opt.MapFrom(s =>
+                          (s.Book_Authors ?? Enumerable.Empty<Book_Authors>()).Select(ba => ba.BookId)));
+
+            // Create/Update DTO -> Entity
+            CreateMap<CreateOrUpdateAuthorDTO, Authors>()
+                .ForMember(d => d.Auth_Name, opt => opt.MapFrom(s => s.Name))
+            // تجاهل علاقات الربط في الإنشاء/التحديث
+
+            .ForMember(d => d.Book_Authors, opt => opt.Ignore());
+
             #endregion
         }
     }

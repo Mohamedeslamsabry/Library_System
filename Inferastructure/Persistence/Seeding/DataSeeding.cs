@@ -1,4 +1,5 @@
 ﻿using Domain_Layer.Contract.Seeding;
+using Domain_Layer.Models.Authors_Models;
 using Domain_Layer.Models.Categories_Models;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data.DbContexts;
@@ -28,6 +29,19 @@ namespace Persistence.Seeding
                     if (Categories != null && Categories.Any())
                     {
                         await _dbContext.AddRangeAsync(Categories);
+                    }
+                }
+
+                if (!_dbContext.Authors.Any())
+                {
+
+                    var authorsData = File.OpenRead(@"..\Inferastructure\Persistence\Data\DataSeed\authors_seed.json");
+
+                    var authors = await JsonSerializer.DeserializeAsync<List<Authors>>(authorsData);
+
+                    if (authors != null && authors.Any())
+                    {
+                        await _dbContext.AddRangeAsync(authors);
                     }
                 }
 
