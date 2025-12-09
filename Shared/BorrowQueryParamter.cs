@@ -1,9 +1,7 @@
 ﻿namespace Shared
 {
-    public class PublisherQueryParamter
+    public class BorrowQueryParamter
     {
-        public string? search { get; set; }
-
         #region pagention
         private const int DeafultPageSize = 5;
         private const int MaxPageSize = 10;

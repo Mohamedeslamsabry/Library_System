@@ -12,6 +12,7 @@ using Domain_Layer.Models.Shelf_Models;
 using Domain_Layer.Models.Users_Models;
 using Shared.DTO.authors;
 using Shared.DTO.Book;
+using Shared.DTO.Borrow;
 using Shared.DTO.Categories;
 using Shared.DTO.Employee;
 using Shared.DTO.Floor;
@@ -283,6 +284,22 @@ namespace Service_Implemention.Mapper
                 .ForMember(d => d.BookIds, opt => opt.MapFrom(s =>
                     (s.Book ?? Enumerable.Empty<Book>()).Select(b => b.Id)));
 
+            #endregion
+
+            #region Borrow
+
+
+            CreateMap<Borrow, BorrowDTO>()
+                     .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User != null ? s.User.User_Name : null))
+                     .ForMember(d => d.EmployeeName, opt => opt.MapFrom(s => s.Employee != null ? $"{s.Employee.FirstName}_{s.Employee.LastName}" : null))
+                                .ForMember(d => d.BookTitle, opt => opt.MapFrom(s => s.Book != null ? s.Book.TiTle : null));
+
+
+            CreateMap<CreateOrUpdateBorrowDTO, Borrow>()
+                // تجاهل النفيجيشن في الإنشاء—هنخلي EF يديرها (Lazy Loading / Attach)
+                .ForMember(d => d.User, opt => opt.Ignore())
+                .ForMember(d => d.Employee, opt => opt.Ignore())
+                .ForMember(d => d.Book, opt => opt.Ignore());
             #endregion
         }
     }

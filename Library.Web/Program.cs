@@ -39,6 +39,7 @@ namespace Library.Web
             builder.Services.AddScoped<IBookService, BookService>();
             builder.Services.AddScoped<IAuthorsService, AuthorService>();
             builder.Services.AddScoped<ICategoriService, categoryService>();
+            builder.Services.AddScoped<IBorrowService, BorrowingService>();
 
 
 
