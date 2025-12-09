@@ -2,6 +2,7 @@
 using Domain_Layer.Models.Authors_Models;
 using Domain_Layer.Models.Book_Authors_Models;
 using Domain_Layer.Models.Book_Models;
+using Domain_Layer.Models.Categories_Models;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Puplishers_Models;
@@ -10,6 +11,7 @@ using Domain_Layer.Models.Shelf_Models;
 using Domain_Layer.Models.Users_Models;
 using Shared.DTO.authors;
 using Shared.DTO.Book;
+using Shared.DTO.Categories;
 using Shared.DTO.Employee;
 using Shared.DTO.Floor;
 using Shared.DTO.Publisher;
@@ -243,6 +245,15 @@ namespace Service_Implemention.Mapper
             // تجاهل علاقات الربط في الإنشاء/التحديث
 
             .ForMember(d => d.Book_Authors, opt => opt.Ignore());
+
+            #endregion
+
+            #region Categories
+
+            CreateMap<Categories, CategorieDTO>()
+                .ForMember(d => d.BooksCount, opt => opt.MapFrom(s => s.Book != null ? s.Book.Count : 0))
+                .ForMember(d => d.BookIds, opt => opt.MapFrom(s =>
+                    (s.Book ?? Enumerable.Empty<Book>()).Select(b => b.Id)));
 
             #endregion
         }
