@@ -2,6 +2,7 @@
 using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Models.Book_Authors_Models;
 using Domain_Layer.Models.Book_Models;
+using Domain_Layer.Models.Borrow_Models;
 using Domain_Layer.Models.Categories_Models;
 using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shelf_Models;
@@ -159,40 +160,80 @@ namespace Service_Implemention.Service
         #endregion
 
         #region DeleteAsync
+        //public async Task<bool> DeleteAsync(int id)
+        //{
+        //    try
+        //    {
+        //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
+        //        var linkRepo = _unitOfWork.GetRepoartory<Book_Authors>();
+
+        //        var book = await bookRepo.GetByIdAsync(id);
+        //        if (book is null) return false;
+
+        //        // لو عايز تمنع الحذف لو فيه Borrow مرتبط:
+        //        if (book.Borrow != null) throw new InvalidOperationException("Cannot delete a borrowed book.");
+
+        //        // حمّل مجموعة الروابط (لو Lazy Loading عبر proxies، لمس المجموعة بيكفي)
+        //        book.Book_Authors ??= new HashSet<Book_Authors>();
+        //        var _ = book.Book_Authors.Count; // يجبر Lazy Loading على التحميل
+
+        //        // احذف الروابط أولًا
+        //        if (book.Book_Authors.Any())
+        //        {
+        //            // الأفضل تستخدم Remove على الـ repo للروابط
+        //            foreach (var link in book.Book_Authors.ToList())
+        //                linkRepo.Remove(link);
+        //        }
+
+        //        // بعد تنظيف الروابط، احذف الكتاب
+        //        bookRepo.Remove(book);
+
+        //        return await _unitOfWork.SaveChangesAsync() > 0;
+        //    }
+        //    catch (DbUpdateException ex)
+        //    {
+        //        // في حالة وجود علاقات أخرى تمنع الحذف (مثلاً Borrow بـ Restrict)
+        //        // TODO: log ex
+        //        Console.WriteLine(ex.Message);
+        //        return false;
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+
+
         public async Task<bool> DeleteAsync(int id)
         {
             try
             {
                 var bookRepo = _unitOfWork.GetRepoartory<Book>();
-                var linkRepo = _unitOfWork.GetRepoartory<Book_Authors>();
-
                 var book = await bookRepo.GetByIdAsync(id);
                 if (book is null) return false;
 
-                // لو عايز تمنع الحذف لو فيه Borrow مرتبط:
-                if (book.Borrow != null) throw new InvalidOperationException("Cannot delete a borrowed book.");
+                // اجبار Lazy Loading لتحميل المجموعات
+                book.Borrows ??= new HashSet<Borrow>();
+                var _borrowsCount = book.Borrows.Count;
 
-                // حمّل مجموعة الروابط (لو Lazy Loading عبر proxies، لمس المجموعة بيكفي)
+                if (_borrowsCount > 0)
+                    throw new InvalidOperationException("Cannot delete a book that has borrow records.");
+
+                // نفس الشيء لعلاقة Book_Authors إن لم يكن لديك Cascade
                 book.Book_Authors ??= new HashSet<Book_Authors>();
-                var _ = book.Book_Authors.Count; // يجبر Lazy Loading على التحميل
-
-                // احذف الروابط أولًا
-                if (book.Book_Authors.Any())
+                var _authorsCount = book.Book_Authors.Count;
+                if (_authorsCount > 0)
                 {
-                    // الأفضل تستخدم Remove على الـ repo للروابط
+                    var linkRepo = _unitOfWork.GetRepoartory<Book_Authors>();
                     foreach (var link in book.Book_Authors.ToList())
                         linkRepo.Remove(link);
                 }
 
-                // بعد تنظيف الروابط، احذف الكتاب
                 bookRepo.Remove(book);
-
                 return await _unitOfWork.SaveChangesAsync() > 0;
             }
             catch (DbUpdateException ex)
             {
-                // في حالة وجود علاقات أخرى تمنع الحذف (مثلاً Borrow بـ Restrict)
-                // TODO: log ex
                 Console.WriteLine(ex.Message);
                 return false;
             }

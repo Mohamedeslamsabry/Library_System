@@ -5,6 +5,7 @@
         public string Title { get; set; } = null!;
         public string Name { get; set; } = null!;
         public decimal Price { get; set; }
+        public int Amount { get; set; }
         public int? ShelfId { get; set; }
         public int? CategoryId { get; set; }
         public int? PublisherId { get; set; }

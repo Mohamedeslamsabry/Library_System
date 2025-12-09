@@ -2,6 +2,7 @@
 using Domain_Layer.Models.Authors_Models;
 using Domain_Layer.Models.Book_Authors_Models;
 using Domain_Layer.Models.Book_Models;
+using Domain_Layer.Models.Borrow_Models;
 using Domain_Layer.Models.Categories_Models;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
@@ -188,8 +189,35 @@ namespace Service_Implemention.Mapper
                       .ForMember(d => d.AuthorIds, opt => opt.MapFrom(s => s.Book_Authors.Select(ba => ba.AuthorId)))
                       .ForMember(d => d.AuthorNames, opt => opt.MapFrom(s =>
                           s.Book_Authors.Where(ba => ba.Author != null).Select(ba => ba.Author.Auth_Name)))
-                      .ForMember(d => d.IsBorrowed, opt => opt.MapFrom(s => s.Borrow != null))
-                      .ForMember(d => d.BorrowId, opt => opt.MapFrom(s => s.Borrow != null ? (int?)s.Borrow.Id : null));
+
+                     // Borrows
+                     .ForMember(d => d.BorrowsCount, opt => opt.MapFrom(s => s.Borrows != null ? s.Borrows.Count : 0))
+                     .ForMember(d => d.BorrowIds, opt => opt.MapFrom(s =>
+                         (s.Borrows ?? Enumerable.Empty<Borrow>()).Select(b => b.Id)))
+                     .ForMember(d => d.LastBorrowDate, opt => opt.MapFrom(s =>
+                         (s.Borrows ?? Enumerable.Empty<Borrow>())
+                             .OrderByDescending(b => b.DateBorrow)
+                             .Select(b => (DateTime?)b.DateBorrow)
+                             .FirstOrDefault()))
+                     .ForMember(d => d.LastDueDate, opt => opt.MapFrom(s =>
+
+                    (s.Borrows ?? Enumerable.Empty<Borrow>())
+                                     .OrderByDescending(b => b.DateBorrow)
+                                     .Select(b => (DateTime?)b.DueDate)
+                                     .FirstOrDefault()))
+                             .ForMember(d => d.OverdueCount, opt => opt.MapFrom(s =>
+                                 (s.Borrows ?? Enumerable.Empty<Borrow>())
+                                     .Count(b => b.DueDate < DateTime.UtcNow))) // استخدم Utc لضمان ثبات التوقيت
+                             .ForMember(d => d.IsLikelyActive, opt => opt.MapFrom(s =>
+                                 (s.Borrows ?? Enumerable.Empty<Borrow>())
+                  
+                    .OrderByDescending(b => b.DateBorrow)
+                                     .Select(b => (DateTime?)b.DueDate)
+                                     .FirstOrDefault() >= DateTime.UtcNow));
+            
+
+
+
 
 
 
@@ -200,7 +228,7 @@ namespace Service_Implemention.Mapper
                        .ForMember(d => d.Shelf, opt => opt.Ignore())
                        .ForMember(d => d.Category, opt => opt.Ignore())
                        .ForMember(d => d.puplisher, opt => opt.Ignore())
-                       .ForMember(d => d.Borrow, opt => opt.Ignore())
+                       .ForMember(d => d.Borrows, opt => opt.Ignore())
                        .ForMember(d => d.Book_Authors, opt => opt.Ignore())
                        .ForMember(d => d.Book_Authors, opt => opt.Ignore()) // مهم جدًا
                        .AfterMap((src, dest) =>

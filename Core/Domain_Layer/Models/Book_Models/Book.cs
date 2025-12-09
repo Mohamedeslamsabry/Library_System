@@ -13,6 +13,7 @@ namespace Domain_Layer.Models.Book_Models
         public string Name { get; set; } = null!;
         public string TiTle { get; set; } = null!;
         public decimal Price { get; set; }
+        public int Amount { get; set; }
 
         #endregion
 
@@ -38,7 +39,7 @@ namespace Domain_Layer.Models.Book_Models
         #endregion
 
         #region Borrow
-        public virtual Borrow? Borrow { get; set; }
+        public virtual ICollection<Borrow> Borrows { get; set; } = new HashSet<Borrow>();
         #endregion
 
         #endregion

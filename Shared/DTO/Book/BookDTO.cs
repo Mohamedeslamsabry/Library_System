@@ -6,6 +6,7 @@
         public string Name { get; set; } = null!;
         public string Title { get; set; } = null!;
         public decimal Price { get; set; }
+        public int Amount { get; set; }
         public int? ShelfId { get; set; }
         //public string? ShelfName { get; set; }
         public int? CategoryId { get; set; }
@@ -17,8 +18,22 @@
         public List<int> AuthorIds { get; set; } = new();
         public List<string> AuthorNames { get; set; } = new();
 
-        // حالة الاستعارة (اختياري)
-        public bool IsBorrowed { get; set; }
-        public int? BorrowId { get; set; }
+        public int AuthorsCount { get; set; }
+
+        // Borrows
+
+        public int BorrowsCount { get; set; }
+        public List<int> BorrowIds { get; set; } = new();
+        public DateTime? LastBorrowDate { get; set; }
+        public DateTime? LastDueDate { get; set; }
+        public int OverdueCount { get; set; }
+
+        // تقدير اختياري (لو عايزه): نشط غالبًا (آخر DueDate >= Today)
+        public bool IsLikelyActive { get; set; }
+
+
+
+        public bool HasActiveBorrow { get; set; }
+
     }
 }

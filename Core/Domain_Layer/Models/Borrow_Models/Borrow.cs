@@ -35,7 +35,6 @@ namespace Domain_Layer.Models.Borrow_Models
         #endregion
 
         #endregion
-
     }
 
 }
