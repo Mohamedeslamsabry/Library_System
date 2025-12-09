@@ -50,7 +50,7 @@ namespace Service_Implemention.Service
                 }
                 var User = _mapper.Map<CreateOrUpdateUserDTO, Users>(CreateUser);
 
-                // ✅ تحقق من وجود الدور لو تم إدخاله
+
                 if (CreateUser.EmployeeId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.Id == CreateUser.EmployeeId))
                     throw new ArgumentException("Employee does not exist.");
 

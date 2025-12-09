@@ -10,7 +10,9 @@ namespace Domain_Layer.Models.Book_Models
     public class Book : BaseEntity
     {
         #region Properties
+        public string Name { get; set; } = null!;
         public string TiTle { get; set; } = null!;
+        public decimal Price { get; set; }
 
         #endregion
 
@@ -27,12 +29,12 @@ namespace Domain_Layer.Models.Book_Models
 
         #region Categories (R03) Classified
         public virtual Categories Category { get; set; } = null!;
-        public int CategoryId { get; set; }
+        public int? CategoryId { get; set; }
         #endregion
 
         #region Puplishers (R04) Have
         public virtual Puplishers puplisher { get; set; } = null!;
-        public int puplisherId { get; set; }
+        public int? puplisherId { get; set; }
         #endregion
 
         #region Borrow

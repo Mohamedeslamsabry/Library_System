@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Domain_Layer.Models.Book_Authors_Models;
 using Domain_Layer.Models.Book_Models;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
@@ -6,12 +7,12 @@ using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
 using Domain_Layer.Models.Shelf_Models;
 using Domain_Layer.Models.Users_Models;
+using Shared.DTO.Book;
 using Shared.DTO.Employee;
 using Shared.DTO.Floor;
 using Shared.DTO.Publisher;
 using Shared.DTO.Shelf;
 using Shared.DTO.User;
-using System.Drawing;
 
 namespace Service_Implemention.Mapper
 {
@@ -104,8 +105,8 @@ namespace Service_Implemention.Mapper
 
             // Sub DTO: Employee -> EmployeeBriefDto
             CreateMap<Employee, EmployeeBriefDto>()
-                .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{ s.FirstName}_{s.LastName}")) 
-                .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s=>s.PhoneNumber));
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}"))
+                .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s => s.PhoneNumber));
 
 
             #endregion
@@ -165,17 +166,66 @@ namespace Service_Implemention.Mapper
 
 
             CreateMap<CreateOrUpdateUserDTO, Users>();
-                      
+
 
             // اختياري: خريطة الموظف المختصر
             CreateMap<Employee, EmployeeShortDto>()
-                           .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}")); 
+                           .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}"));
+
+
+            #endregion
+
+            #region Book
+
+            CreateMap<Book, BookDTO>()
+                      .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category != null ? s.Category.CategoryName : null))
+                      .ForMember(d => d.PublisherId, opt => opt.MapFrom(s => s.puplisherId))
+                      .ForMember(d => d.PublisherName, opt => opt.MapFrom(s => s.puplisher != null ? s.puplisher.Publisher_Name : null))
+                      .ForMember(d => d.AuthorIds, opt => opt.MapFrom(s => s.Book_Authors.Select(ba => ba.AuthorId)))
+                      .ForMember(d => d.AuthorNames, opt => opt.MapFrom(s =>
+                          s.Book_Authors.Where(ba => ba.Author != null).Select(ba => ba.Author.Auth_Name)))
+                      .ForMember(d => d.IsBorrowed, opt => opt.MapFrom(s => s.Borrow != null))
+                      .ForMember(d => d.BorrowId, opt => opt.MapFrom(s => s.Borrow != null ? (int?)s.Borrow.Id : null));
+
+
+
+            CreateMap<CreateOrUpdateBookDto, Book>()
+                       // مفاتيح العلاقات
+                       .ForMember(d => d.puplisherId, opt => opt.MapFrom(s => s.PublisherId))
+                       // تجاهل الملاحة: بنضبطها في EF عند التتبع/التحميل
+                       .ForMember(d => d.Shelf, opt => opt.Ignore())
+                       .ForMember(d => d.Category, opt => opt.Ignore())
+                       .ForMember(d => d.puplisher, opt => opt.Ignore())
+                       .ForMember(d => d.Borrow, opt => opt.Ignore())
+                       .ForMember(d => d.Book_Authors, opt => opt.Ignore())
+                       .ForMember(d => d.Book_Authors, opt => opt.Ignore()) // مهم جدًا
+                       .AfterMap((src, dest) =>
+                       {
+                           // لو الكيان جديد، Book_Authors غالبًا تكون فاضية
+                           // في الحالتين (Create/Update): نعمل مزامنة بسيطة للـ AuthorIds
+
+                           var newAuthorIds = (src.AuthorIds ?? new List<int>()).Distinct().ToList();
+
+                           // إزالة العلاقات غير المطلوبة
+                           dest.Book_Authors = dest.Book_Authors
+                               .Where(ba => newAuthorIds.Contains(ba.AuthorId))
+                               .ToHashSet();
+
+                           // إضافة العلاقات الجديدة
+                           var existingAuthorIds = dest.Book_Authors.Select(ba => ba.AuthorId).ToHashSet();
+                           var toAdd = newAuthorIds.Where(id => !existingAuthorIds.Contains(id));
+
+                           foreach (var authorId in toAdd)
+
+                           {
+                               dest.Book_Authors.Add(new Book_Authors
+                               {
+                                   BookId = dest.Id,     // EF ممكن يضبطه عند الإضافة
+                                   AuthorId = authorId
+                               });
+                           }
+                       });
+            #endregion
         }
-
-
-        #endregion
     }
 }
-
-
-

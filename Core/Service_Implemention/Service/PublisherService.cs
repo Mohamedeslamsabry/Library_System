@@ -1,14 +1,9 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
-using Domain_Layer.Models.Employee_Models;
-using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Puplishers_Models;
-using Domain_Layer.Models.Shelf_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
-using Shared.DTO.Employee;
-using Shared.DTO.Floor;
 using Shared.DTO.Publisher;
 
 namespace Service_Implemention.Service
@@ -100,7 +95,7 @@ namespace Service_Implemention.Service
 
         #endregion
 
-        #region Delete Floor
+        #region Delete publisher
         public async Task<bool> DeleteAsync(int Id)
         {
             try
@@ -114,7 +109,7 @@ namespace Service_Implemention.Service
                 {
                     foreach (var Book in Pubblisher.Book)
                     {
-                        Book.ShelfId = null;
+                        Book.puplisherId = null;
                     }
                 }
 

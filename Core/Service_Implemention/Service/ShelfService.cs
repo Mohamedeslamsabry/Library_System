@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
-using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shelf_Models;
 using Service_Abstraction.Interfaces;
-using Shared.DTO.Floor;
 using Shared.DTO.Shelf;
-using System.Drawing;
 
 namespace Service_Implemention.Service
 {

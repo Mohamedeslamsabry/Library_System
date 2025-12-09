@@ -182,6 +182,5 @@ namespace Service_Implemention.Service
             }
         }
         #endregion
-
     }
 }
