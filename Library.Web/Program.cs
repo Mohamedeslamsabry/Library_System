@@ -1,22 +1,13 @@
-﻿using Domain_Layer.Contract.Cash;
-using Domain_Layer.Contract.Seeding;
-using Domain_Layer.Contract.UnitOfWork;
+﻿using Domain_Layer.Contract.Seeding;
 using Domain_Layer.Models.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Library.Web.Extension;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using Persistence.Data.DbContexts;
 using Persistence.Data.IdentityContext;
-using Persistence.Implment_repo;
-using Persistence.Seeding;
+using Persistence.Register_Service;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Mapper;
+using Service_Implemention.Register_Service;
 using Service_Implemention.Service;
-using StackExchange.Redis;
-using System.Security.Claims;
-using System.Text;
 
 namespace Library.Web
 {
@@ -27,94 +18,34 @@ namespace Library.Web
             var builder = WebApplication.CreateBuilder(args);
 
             #region  Add services to the container.
+
+            #region Add automaticly
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-
-
-
-            #region SWagger Ui
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>
+            builder.Services.AddCors(Options =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo
+                Options.AddPolicy("AllowAll", builder =>
                 {
-                    Title = "Library API",
-                    Version = "v1"
+                    builder.AllowAnyHeader();
+                    builder.AllowAnyMethod();
+                    builder.AllowAnyOrigin();
                 });
-
-                // تعريف مخطط الأمان: Bearer JWT في الهيدر Authorization
-                var securityScheme = new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",                       // ← لازم يكون Authorization
-                    Description = "Add Token",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.Http,               // ← مش ApiKey
-                    Scheme = "bearer",                            // ← لازم lowercase
-                    BearerFormat = "JWT",
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                };
-
-                c.AddSecurityDefinition("Bearer", securityScheme);
-
-                // نجبر كل العمليات إنها تستخدم الـ Bearer تلقائيًا
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        { securityScheme, Array.Empty<string>() }
-    });
             });
-
             #endregion
 
+            #region Add Swiger Service
+            builder.Services.AddSwigerService();
+            #endregion
 
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            #region Presitance (Register Service) 
+            builder.Services.AddInferstructureService(builder.Configuration);
+            #endregion
 
-
-            builder.Services.AddDbContext<LibraryDbContext>(Options =>
-            {
-                Options.UseSqlServer(builder.Configuration.GetConnectionString("DeafultConnection"));
-                Options.UseLazyLoadingProxies();
-            });
-
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-            builder.Services.AddScoped<IDataSeeding, DataSeeding>();
-            builder.Services.AddScoped<IFloorService, FloorService>();
-            builder.Services.AddScoped<IShelfService, ShelfService>();
-            builder.Services.AddScoped<IPublisherService, PublisherService>();
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IBookService, BookService>();
-            builder.Services.AddScoped<IAuthorsService, AuthorService>();
-            builder.Services.AddScoped<ICategoriService, categoryService>();
-            builder.Services.AddScoped<IBorrowService, BorrowingService>();
-            builder.Services.AddScoped<IAuthentctionService, AuthentcationService>();
-
-            builder.Services.AddSingleton<IRevokedTokenStore, InMemoryRevokedTokenStore>();
-
-
-            builder.Services.AddAutoMapper(M => M.AddProfile(new MapingProfile()));
-
-            #region ConnectionMultiplexer
-            builder.Services.AddSingleton<IConnectionMultiplexer>((_) =>
-            {
-                return ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("RediusConnection")!);
-            });
-
-
-            builder.Services.AddScoped<ICashRepo, CashRepositary>();
-            builder.Services.AddScoped<ICashService, CashService>();
-
+            #region Service Implement (Register)
+            builder.Services.AddApplictionService();
             #endregion
 
             #region Identity
-            builder.Services.AddDbContext<LibraryIdentityContext>(options =>
-            {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection"));
-            });
 
             //builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
             //   .AddEntityFrameworkStores<LibraryIdentityContext>();
@@ -135,71 +66,10 @@ namespace Library.Web
 
             #endregion
 
-
             #endregion
 
-            #region JWT
-            builder.Services.AddAuthentication(Config =>
-               {
-                   Config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                   Config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-               }).AddJwtBearer(options =>
-               {
-                   //options.SaveToken = true;
-                   options.TokenValidationParameters = new TokenValidationParameters()
-                   {
-                       ValidateIssuer = true,
-                       ValidIssuer = builder.Configuration["JWTOptions:issuer"],
-
-                       ValidateAudience = true,
-                       ValidAudience = builder.Configuration["JWTOptions:audience"],
-
-                       ValidateLifetime = true,
-
-
-                       ValidateIssuerSigningKey = true,
-
-
-                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("JWTOptions")["SecritKey"]!)),
-
-
-                       // يفضل تقلّل أو تصفّر الانحراف
-                       ClockSkew = TimeSpan.Zero,
-
-                       // يضمن وجود Exp في كل التوكينات
-                       RequireExpirationTime = true,
-
-
-                   };
-
-
-                   options.Events = new JwtBearerEvents
-                   {
-                       OnTokenValidated = async ctx =>
-                       {
-                           var userManager = ctx.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
-
-                           var userId = ctx.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-                           var ssClaim = ctx.Principal?.FindFirst("ss")?.Value;
-
-                           if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(ssClaim))
-                           {
-                               ctx.Fail("Token missing required claims.");
-                               return;
-                           }
-
-                           var user = await userManager.FindByIdAsync(userId);
-                           if (user is null || user.SecurityStamp != ssClaim)
-                           {
-
-                               // SecurityStamp اتغيّر (مثلاً بعد Reset Password)
-                               ctx.Fail("Token invalidated due to security stamp change.");
-                           }
-                       }
-                   };
-
-               });
-
+            #region AddJWTService
+            builder.Services.AddJWTService(builder.Configuration);
             #endregion
 
             var app = builder.Build();
@@ -213,22 +83,23 @@ namespace Library.Web
             #endregion
 
             #region  Configure the HTTP request pipeline.
+
+            #region Custome MidelWare
+
+            #endregion
+
+            #region Piplene
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
             app.UseHttpsRedirection();
-
-
             app.UseCors("AllowFrontend");
-
-
             app.UseAuthorization();
-
-
             app.MapControllers();
+            #endregion
+
             #endregion
 
             app.Run();

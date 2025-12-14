@@ -1,13 +1,9 @@
 ﻿using Domain_Layer.Models.Identity;
-using Domain_Layer.Models.Users_Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Service_Abstraction.Interfaces;
 using Shared.DTO.Identity;
-using Shared.DTO.User;
-using Shared.Forget_Passowrd;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Mail;
