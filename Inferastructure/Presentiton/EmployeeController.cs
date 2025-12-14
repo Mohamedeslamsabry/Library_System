@@ -11,6 +11,7 @@ namespace Presentiton
     {
         #region Get All Employee
 
+        //[Authorize(Roles ="Admin")]
         [HttpGet]
         //https://localhost:7063/api/Employee
         public async Task<ActionResult<IEnumerable<EmployeeDTO>>> GetAllEmployees([FromQuery] EmployeeQueryParamter employeeQuery)
