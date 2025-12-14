@@ -3,6 +3,7 @@ using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
+using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
@@ -46,85 +47,277 @@ namespace Service_Implemention.Service
         #endregion
 
         #region CreateAsync
-        public async Task<bool> CreateAsync(CreateOrUpdateEmployeeDTO createEmployee)
+
+        public async Task<CreateEmployeeResult> CreateAsync(CreateOrUpdateEmployeeDTO createEmployee)
         {
             try
             {
-                bool EmailIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.Email == createEmployee.Email).Result.Any();
-                bool PhoneIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.PhoneNumber == createEmployee.PhoneNumber).Result.Any();
-                if (EmailIsExist || PhoneIsExist)
-                {
-                    return false;
-                }
-                var employee = _mapper.Map<CreateOrUpdateEmployeeDTO, Employee>(createEmployee);
+                // ✅ فحص التكرار بكفاءة
+                var repo = _unitOfWork.GetRepoartory<Employee>();
 
+                var phoneExists = await repo.AnyAsync(x => x.PhoneNumber == createEmployee.PhoneNumber);
+                if (phoneExists)
+                {
+                    return new CreateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "DuplicatePhone",
+                        ErrorField = "PhoneNumber",
+                        Message = "The phone number is already registered."
+                    };
+                }
+
+                var emailExists = await repo.AnyAsync(x => x.Email == createEmployee.Email);
+                if (emailExists)
+                {
+                    return new CreateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "DuplicateEmail",
+                        ErrorField = "Email",
+                        Message = "The email address is already registered."
+                    };
+                }
 
                 // ✅ تحقق من وجود المدير لو تم إدخاله
-                if (createEmployee.SupervisorId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createEmployee.SupervisorId))
-                    throw new ArgumentException("Supervisor does not exist.");
-
-                // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (createEmployee.floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == createEmployee.floorsNumberWork))
-                    throw new ArgumentException("Floor does not exist.");
-
-                await _unitOfWork.GetRepoartory<Employee>().AddAsync(employee);
-                var isCreated = await _unitOfWork.SaveChangesAsync() > 0;
-                if (!isCreated)
+                if (createEmployee.SupervisorId.HasValue &&
+                    !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createEmployee.SupervisorId))
                 {
-                    return false;
-                }
-                else
-                {
-                    return isCreated;
+                    return new CreateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "SupervisorNotFound",
+                        ErrorField = "SupervisorId",
+                        Message = "المشرف غير موجود."
+                    };
                 }
 
+                // ✅ تحقق من وجود الدور/الدوران (الأدوار/الأدوار—هنا Floors)
+                if (createEmployee.floorsNumberWork.HasValue &&
+                    !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == createEmployee.floorsNumberWork))
+                {
+                    return new CreateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "FloorNotFound",
+                        ErrorField = "floorsNumberWork",
+                        Message = "The floor does not exist."
+                    };
+                }
+
+                var employee = _mapper.Map<CreateOrUpdateEmployeeDTO, Employee>(createEmployee);
+
+                await repo.AddAsync(employee);
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+
+                if (!saved)
+                {
+                    return new CreateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "SaveFailed",
+                        Message = "حدث خطأ أثناء الحفظ."
+                    };
+                }
+
+                return new CreateEmployeeResult
+                {
+                    Success = true,
+                    Message = "Succesfully."
+                };
+            }
+            catch (DbUpdateException ex) // في حالة Unique Index في DB
+            {
+                // حاول تمييز الحقل من رسالة الـ DB لو أمكن
+                Console.WriteLine(ex.Message);
+                return new CreateEmployeeResult
+                {
+                    Success = false,
+                    ErrorCode = "UniqueConstraintViolation",
+                    Message = "There is duplicate data (phone or email)."
+                };
             }
             catch (Exception)
             {
-
-                return false;
+                return new CreateEmployeeResult
+                {
+                    Success = false,
+                    ErrorCode = "UnexpectedError",
+                    Message = "An unexpected error occurred."
+                };
             }
         }
         #endregion
 
         #region UpdateAsync
-        public async Task<bool> UpdateAsync(int id, CreateOrUpdateEmployeeDTO updateEmployee)
+        //public async Task<bool> UpdateAsync(int id, CreateOrUpdateEmployeeDTO updateEmployee)
+        //{
+        //    try
+        //    {
+
+        //        bool EmailIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.Email == updateEmployee.Email && X.Id != id).Result.Any();
+        //        bool PhoneIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.PhoneNumber == updateEmployee.PhoneNumber && X.Id != id).Result.Any();
+        //        if (EmailIsExist || PhoneIsExist)
+        //        {
+        //            return false;
+        //        }
+
+        //        var Repo = _unitOfWork.GetRepoartory<Employee>();
+        //        var Employee = await Repo.GetByIdAsync(id);
+        //        if (Employee is null) { return false; }
+
+        //        // ✅ تحقق من وجود المدير لو تم إدخاله
+        //        if (updateEmployee.SupervisorId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateEmployee.SupervisorId))
+        //            throw new ArgumentException("Supervisor does not exist.");
+
+        //        // ✅ تحقق من وجود الدور لو تم إدخاله
+        //        if (updateEmployee.floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == updateEmployee.floorsNumberWork))
+        //            throw new ArgumentException("Floor does not exist.");
+
+
+        //        _mapper.Map(updateEmployee, Employee);
+        //        Repo.Update(Employee);
+        //        return await _unitOfWork.SaveChangesAsync() > 0;
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return false;
+        //    }
+        //}
+
+
+        public async Task<UpdateEmployeeResult> UpdateAsync(int id, CreateOrUpdateEmployeeDTO updateEmployee)
         {
             try
             {
+                var repo = _unitOfWork.GetRepoartory<Employee>();
+                var employee = await repo.GetByIdAsync(id);
 
-                bool EmailIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.Email == updateEmployee.Email && X.Id != id).Result.Any();
-                bool PhoneIsExist = _unitOfWork.GetRepoartory<Employee>().GetAllAsync(X => X.PhoneNumber == updateEmployee.PhoneNumber && X.Id != id).Result.Any();
-                if (EmailIsExist || PhoneIsExist)
+                if (employee is null)
                 {
-                    return false;
+                    return new UpdateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "NotFound",
+                        Message = "Employee Not Found."
+                    };
                 }
 
-                var Repo = _unitOfWork.GetRepoartory<Employee>();
-                var Employee = await Repo.GetByIdAsync(id);
-                if (Employee is null) { return false; }
 
-                // ✅ تحقق من وجود المدير لو تم إدخاله
-                if (updateEmployee.SupervisorId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateEmployee.SupervisorId))
-                    throw new ArgumentException("Supervisor does not exist.");
+                // ✅ تحقّق من وجود المشرف (إن تم إدخاله)
+                if (updateEmployee.SupervisorId.HasValue &&
+                    !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateEmployee.SupervisorId))
+                {
+                    return new UpdateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "SupervisorNotFound",
+                        ErrorField = "SupervisorId",
+                        Message = "المشرف غير موجود."
+                    };
+                }
 
-                // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (updateEmployee.floorsNumberWork.HasValue && !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == updateEmployee.floorsNumberWork))
-                    throw new ArgumentException("Floor does not exist.");
+                // ✅ تحقّق من وجود الدور/الطابق (إن تم إدخاله)
+                if (updateEmployee.floorsNumberWork.HasValue &&
+                    !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == updateEmployee.floorsNumberWork))
+                {
+                    return new UpdateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "FloorNotFound",
+                        ErrorField = "floorsNumberWork",
+                        Message = "الطابق غير موجود."
+                    };
+                }
+
+                // ✅ فحص تكرار الهاتف/الإيميل فقط لو اتغيّروا فعلاً
+                if (!string.Equals(employee.PhoneNumber, updateEmployee.PhoneNumber, StringComparison.OrdinalIgnoreCase))
+                {
+                    var phoneExists = await repo.AnyAsync(x => x.PhoneNumber == updateEmployee.PhoneNumber && x.Id != id);
+                    if (phoneExists)
+                    {
+                        return new UpdateEmployeeResult
+                        {
+                            Success = false,
+                            ErrorCode = "DuplicatePhone",
+                            ErrorField = "PhoneNumber",
+                            Message = "The phone number is already registered.."
+                        };
+                    }
+                }
+
+                if (!string.Equals(employee.Email, updateEmployee.Email, StringComparison.OrdinalIgnoreCase))
+                {
+                    var emailExists = await repo.AnyAsync(x => x.Email == updateEmployee.Email && x.Id != id);
+                    if (emailExists)
+                    {
+                        return new UpdateEmployeeResult
+                        {
+                            Success = false,
+                            ErrorCode = "DuplicateEmail",
+                            ErrorField = "Email",
+                            Message = "The email address is already registered.."
+                        };
+                    }
+                }
+
+                
+
+                _mapper.Map(updateEmployee, employee);
 
 
-                _mapper.Map(updateEmployee, Employee);
-                Repo.Update(Employee);
-                return await _unitOfWork.SaveChangesAsync() > 0;
+                repo.Update(employee);
+
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                {
+                    return new UpdateEmployeeResult
+                    {
+                        Success = false,
+                        ErrorCode = "SaveFailed",
+                        Message = "No changes were saved.."
+                    };
+                }
+
+                return new UpdateEmployeeResult
+                {
+                    Success = true,
+                    Message = "The employee data has been successfully updated.."
+                };
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return new UpdateEmployeeResult
+                {
+                    Success = false,
+                    ErrorCode = "ConcurrencyConflict",
+                    Message = "A conflict occurred during the update. Please try again after updating the data.."
+                };
+            }
+            catch (DbUpdateException ex)
+            {
+
+                Console.WriteLine(ex.Message);
+                return new UpdateEmployeeResult
+                {
+                    Success = false,
+                    ErrorCode = "UniqueConstraintViolation",
+                    Message = "There is duplicate data (phone or email)."
+                };
             }
             catch (Exception)
             {
-                return false;
+                return new UpdateEmployeeResult
+                {
+                    Success = false,
+                    ErrorCode = "UnexpectedError",
+                    Message = "An unexpected error occurred."
+                };
             }
         }
         #endregion
 
-        #region DeleteAsync
+            #region DeleteAsync
         public async Task<bool> DeleteAsync(int id)
         {
             try

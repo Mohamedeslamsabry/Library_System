@@ -14,11 +14,11 @@ namespace Service_Abstraction.Interfaces
         #endregion
 
         #region CreateAsync
-        Task<bool> CreateAsync(CreateOrUpdateUserDTO createUser);
+        Task<CreateUserResult> CreateAsync(CreateOrUpdateUserDTO createUser);
         #endregion
 
         #region UpdateAsync
-        Task<bool> UpdateAsync(int id, CreateOrUpdateUserDTO updateUser);
+        Task<UpdateUserResult> UpdateAsync(int id, CreateOrUpdateUserDTO updateUser);
         #endregion
     }
 }

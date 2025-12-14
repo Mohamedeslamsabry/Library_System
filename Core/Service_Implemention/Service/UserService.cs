@@ -3,6 +3,8 @@ using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Users_Models;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
@@ -38,74 +40,201 @@ namespace Service_Implemention.Service
         #endregion
 
         #region CreateAsync
-        public async Task<bool> CreateAsync(CreateOrUpdateUserDTO CreateUser)
+
+        public async Task<CreateUserResult> CreateAsync(CreateOrUpdateUserDTO createUser)
         {
             try
             {
-                bool EmailIsExist = _unitOfWork.GetRepoartory<Users>().GetAllAsync(X => X.User_Email == CreateUser.User_Email).Result.Any();
-                bool PhoneIsExist = _unitOfWork.GetRepoartory<Users>().GetAllAsync(X => X.User_Phone == CreateUser.User_Phone).Result.Any();
-                if (EmailIsExist || PhoneIsExist)
-                {
-                    return false;
-                }
-                var User = _mapper.Map<CreateOrUpdateUserDTO, Users>(CreateUser);
+                var usersRepo = _unitOfWork.GetRepoartory<Users>();
 
-
-                if (CreateUser.EmployeeId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.Id == CreateUser.EmployeeId))
-                    throw new ArgumentException("Employee does not exist.");
-
-                await _unitOfWork.GetRepoartory<Users>().AddAsync(User);
-                var isCreated = await _unitOfWork.SaveChangesAsync() > 0;
-                if (!isCreated)
+                // ✅ فحص التكرار بكفاءة باستخدام AnyAsync (بدون .Result)
+                var phoneExists = await usersRepo.AnyAsync(x => x.User_Phone == createUser.User_Phone);
+                if (phoneExists)
                 {
-                    return false;
-                }
-                else
-                {
-                    return isCreated;
+                    return new CreateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "DuplicatePhone",
+                        ErrorField = "User_Phone",
+                        Message = "The phone number is already registered.."
+                    };
                 }
 
+                var emailExists = await usersRepo.AnyAsync(x => x.User_Email == createUser.User_Email);
+                if (emailExists)
+                {
+                    return new CreateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "DuplicateEmail",
+                        ErrorField = "User_Email",
+                        Message = "The email address is already registered.."
+                    };
+                }
+
+                // ✅ تحقّق من الموظف المرتبط (إن تم إدخاله)
+                if (createUser.EmployeeId.HasValue &&
+                    !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createUser.EmployeeId))
+                {
+                    return new CreateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "EmployeeNotFound",
+                        ErrorField = "EmployeeId",
+                        Message = "The associated employee does not exist."
+                    };
+                }
+
+                var user = _mapper.Map<CreateOrUpdateUserDTO, Users>(createUser);
+
+                await usersRepo.AddAsync(user);
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+
+                if (!saved)
+                {
+                    return new CreateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "SaveFailed",
+                        Message = "An error occurred during saving.."
+                    };
+                }
+
+                return new CreateUserResult
+                {
+                    Success = true,
+                    Message = "User created successfully."
+                };
+            }
+            catch (DbUpdateException)
+            {
+                // في حال وجود Unique Index على الإيميل/الموبايل ممكن يحصل هنا تعارض
+                return new CreateUserResult
+                {
+                    Success = false,
+                    ErrorCode = "UniqueConstraintViolation",
+                    Message = "There is duplicate data (phone or email)."
+                };
             }
             catch (Exception)
             {
-
-                return false;
+                return new CreateUserResult
+                {
+                    Success = false,
+                    ErrorCode = "UnexpectedError",
+                    Message = "An unexpected error occurred."
+                };
             }
         }
         #endregion
 
         #region UpdateAsync
-        public async Task<bool> UpdateAsync(int id, CreateOrUpdateUserDTO UpdateUser)
+
+        public async Task<UpdateUserResult> UpdateAsync(int id, CreateOrUpdateUserDTO updateUser)
         {
             try
             {
+                var usersRepo = _unitOfWork.GetRepoartory<Users>();
+                var user = await usersRepo.GetByIdAsync(id);
 
-                bool EmailIsExist = _unitOfWork.GetRepoartory<Users>().GetAllAsync(X => X.User_Email == UpdateUser.User_Email && X.Id != id).Result.Any();
-                bool PhoneIsExist = _unitOfWork.GetRepoartory<Users>().GetAllAsync(X => X.User_Phone == UpdateUser.User_Phone && X.Id != id).Result.Any();
-                if (EmailIsExist || PhoneIsExist)
+                if (user is null)
                 {
-                    return false;
+                    return new UpdateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "NotFound",
+                        Message = "User not found."
+                    };
                 }
 
-                var Repo = _unitOfWork.GetRepoartory<Users>();
-                var User = await Repo.GetByIdAsync(id);
-                if (User is null) { return false; }
+                // ✅ تحقّق من الموظف المرتبط (إن تم إدخاله)
+                if (updateUser.EmployeeId.HasValue &&
+                    !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateUser.EmployeeId))
+                {
+                    return new UpdateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "EmployeeNotFound",
+                        ErrorField = "EmployeeId",
+                        Message = "The associated employee does not exist."
+                    };
+                }
 
-                // ✅ تحقق من وجود الدور لو تم إدخاله
-                if (UpdateUser.EmployeeId.HasValue && !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(f => f.Id == UpdateUser.EmployeeId))
-                    throw new ArgumentException("Employee does not exist.");
+                // ✅ فحص تكرار الهاتف فقط لو اتغيّر فعلاً
+                if (!string.Equals(user.User_Phone, updateUser.User_Phone, StringComparison.Ordinal))
+                {
+                    var phoneExists = await usersRepo.AnyAsync(x => x.User_Phone == updateUser.User_Phone && x.Id != id);
+                    if (phoneExists)
+                    {
+                        return new UpdateUserResult
+                        {
+                            Success = false,
+                            ErrorCode = "DuplicatePhone",
+                            ErrorField = "User_Phone",
+                            Message = "The phone number is already registered."
+                        };
+                    }
+                }
 
-                _mapper.Map(UpdateUser, User);
-                Repo.Update(User);
-                return await _unitOfWork.SaveChangesAsync() > 0;
+                // ✅ فحص تكرار الإيميل فقط لو اتغيّر فعلاً
+                if (!string.Equals(user.User_Email, updateUser.User_Email, StringComparison.OrdinalIgnoreCase))
+                {
+                    var emailExists = await usersRepo.AnyAsync(x => x.User_Email == updateUser.User_Email && x.Id != id);
+                    if (emailExists)
+                    {
+                        return new UpdateUserResult
+                        {
+                            Success = false,
+                            ErrorCode = "DuplicateEmail",
+                            ErrorField = "User_Email",
+                            Message = "The email address is already registered."
+                        };
+                    }
+                }
+
+                // ✅ نفّذ الماب
+                _mapper.Map(updateUser, user);
+
+                usersRepo.Update(user);
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+
+                if (!saved)
+                {
+                    return new UpdateUserResult
+                    {
+                        Success = false,
+                        ErrorCode = "SaveFailed",
+                        Message = "No changes were saved."
+                    };
+                }
+
+                return new UpdateUserResult
+                {
+                    Success = true,
+                    Message = "User data was successfully updated."
+                };
+            }
+            catch (DbUpdateException)
+            {
+                // لو عندك Unique Index على User_Email/User_Phone هتوصل هنا في حال التعارض
+                return new UpdateUserResult
+                {
+                    Success = false,
+                    ErrorCode = "UniqueConstraintViolation",
+                    Message = "There is duplicate data (phone or email)."
+                };
             }
             catch (Exception)
             {
-                return false;
+                return new UpdateUserResult
+                {
+                    Success = false,
+                    ErrorCode = "UnexpectedError",
+                    Message = "An unexpected error occurred."
+                };
             }
         }
 
-
-        #endregion
+            #endregion
+        }
     }
-}
