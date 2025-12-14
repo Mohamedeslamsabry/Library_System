@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Authors_Models;
+using Domain_Layer.Models.Users_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
@@ -31,7 +33,7 @@ namespace Service_Implemention.Service
         public async Task<AuthorDTO?> GetByIdAsync(int Id)
         {
             var author = await _UnitOfWork.GetRepoartory<Authors>().GetByIdAsync(Id);
-            return author == null ? null : _mapper.Map<AuthorDTO>(author);
+            return author == null ? throw new AuthorNotFoundException(Id) : _mapper.Map<AuthorDTO>(author);
         }
         #endregion
 
@@ -39,7 +41,7 @@ namespace Service_Implemention.Service
         public async Task<bool> CreateAsync(CreateOrUpdateAuthorDTO CreateAuthor)
         {
             try
-            {
+            {               
                 var Author = _mapper.Map<CreateOrUpdateAuthorDTO, Authors>(CreateAuthor);
 
                 await _UnitOfWork.GetRepoartory<Authors>().AddAsync(Author);

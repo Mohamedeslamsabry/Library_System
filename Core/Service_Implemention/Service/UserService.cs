@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
-using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Users_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
@@ -33,7 +33,7 @@ namespace Service_Implemention.Service
         public async Task<UserDTO?> GetByIdAsync(int id)
         {
             var User = await _unitOfWork.GetRepoartory<Users>().GetByIdAsync(id);
-            return User == null ? null : _mapper.Map<UserDTO>(User);
+            return User == null ? throw new UserNotFoundException(id) : _mapper.Map<UserDTO>(User);
         }
         #endregion
 

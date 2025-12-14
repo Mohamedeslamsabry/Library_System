@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shelf_Models;
 using Service_Abstraction.Interfaces;
@@ -29,7 +30,7 @@ namespace Service_Implemention.Service
         public async Task<ShelfDTO?> GetByIdAsync(int Id)
         {
             var Shelf = await _UnitOfWork.GetRepoartory<Shelf>().GetByIdAsync(Id);
-            return Shelf == null ? null : _mapper.Map<ShelfDTO>(Shelf);
+            return Shelf == null ? throw new ShelfNotFoundException(Id) : _mapper.Map<ShelfDTO>(Shelf);
         }
         #endregion
 

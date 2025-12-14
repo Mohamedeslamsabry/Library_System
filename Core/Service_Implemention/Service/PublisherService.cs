@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Puplishers_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
@@ -40,7 +41,7 @@ namespace Service_Implemention.Service
         public async Task<PublisherDTO?> GetByIdAsync(int Id)
         {
             var Publisher = await _UnitOfWork.GetRepoartory<Puplishers>().GetByIdAsync(Id);
-            return Publisher == null ? null : _mapper.Map<PublisherDTO>(Publisher);
+            return Publisher == null ? throw new PublisherNotFoundException(Id) : _mapper.Map<PublisherDTO>(Publisher);
         }
         #endregion
 

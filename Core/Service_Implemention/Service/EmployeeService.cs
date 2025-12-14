@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
-using Domain_Layer.Models.Users_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
@@ -41,7 +41,7 @@ namespace Service_Implemention.Service
             //return _mapper.Map<EmployeeDTO>(Employee);
             #endregion
             var employee = await _unitOfWork.GetRepoartory<Employee>().GetByIdAsync(id);
-            return employee == null ? null : _mapper.Map<EmployeeDTO>(employee);
+            return employee == null ? throw new EmployeeNotFoundException(id) : _mapper.Map<EmployeeDTO>(employee);
         }
         #endregion
 

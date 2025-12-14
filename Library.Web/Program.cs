@@ -1,11 +1,9 @@
-﻿using Domain_Layer.Contract.Seeding;
-using Domain_Layer.Models.Identity;
+﻿using Domain_Layer.Models.Identity;
 using Library.Web.Extension;
 using Microsoft.AspNetCore.Identity;
 using Persistence.Data.IdentityContext;
 using Persistence.Register_Service;
 using Service_Abstraction.Interfaces;
-using Service_Implemention.Mapper;
 using Service_Implemention.Register_Service;
 using Service_Implemention.Service;
 
@@ -68,27 +66,27 @@ namespace Library.Web
 
             #endregion
 
+            #region Model State (Validtion)
+            builder.Services.AddWebAppictionService();
+            #endregion
+
             #region AddJWTService
             builder.Services.AddJWTService(builder.Configuration);
             #endregion
 
             var app = builder.Build();
 
-            #region Seeding
-            using var Scope = app.Services.CreateScope();
-            var ObjOfDataSeeding = Scope.ServiceProvider.GetRequiredService<IDataSeeding>();
-
-            await ObjOfDataSeeding.DataSeedAsync();
-            await ObjOfDataSeeding.IdentityDataSeedingAsync();
+            #region DataSeeding
+            await app.DataSeedingAsync();
             #endregion
 
             #region  Configure the HTTP request pipeline.
 
-            #region Custome MidelWare
-
+            #region Custome Midel ware
+            app.UseCustomeExceptionMidelWare();
             #endregion
 
-            #region Piplene
+            #region pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();

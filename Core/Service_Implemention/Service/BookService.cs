@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Book_Authors_Models;
 using Domain_Layer.Models.Book_Models;
 using Domain_Layer.Models.Borrow_Models;
@@ -36,7 +37,7 @@ namespace Service_Implemention.Service
         public async Task<BookDTO?> GetByIdAsync(int id)
         {
             var Book = await _unitOfWork.GetRepoartory<Book>().GetByIdAsync(id);
-            return Book == null ? null : _mapper.Map<BookDTO>(Book);
+            return Book == null ? throw new BookNotFoundException(id) : _mapper.Map<BookDTO>(Book);
         }
         #endregion
 

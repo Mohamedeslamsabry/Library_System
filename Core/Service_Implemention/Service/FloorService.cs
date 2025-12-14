@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shelf_Models;
@@ -30,7 +31,7 @@ namespace Service_Implemention.Service
         public async Task<FloorDTO?> GetByIdAsync(int FloorNumber)
         {
             var Floor = await _UnitOfWork.GetRepoartory<Floors>().GetByIdAsync(FloorNumber);
-            return Floor == null ? null : _mapper.Map<FloorDTO>(Floor);
+            return Floor == null ? throw new FloorNotFoundException(FloorNumber) : _mapper.Map<FloorDTO>(Floor);
         }
         #endregion
 

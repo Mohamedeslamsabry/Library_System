@@ -1,11 +1,12 @@
 ﻿using Domain_Layer.Models.Identity;
+using Library.Web.Factories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
 
 namespace Library.Web.Extension
 {
@@ -111,6 +112,15 @@ namespace Library.Web.Extension
                     }
                 };
 
+            });
+            return Services;
+        }
+
+        public static IServiceCollection AddWebAppictionService(this IServiceCollection Services)
+        {
+            Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = ApiResponseFactory.ValidtionErrorResponse;
             });
             return Services;
         }
