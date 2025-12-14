@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared;
 using Shared.DTO.User;
@@ -12,6 +13,7 @@ namespace Presentiton
     {
         #region Get All User
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetAllUser([FromQuery] UserQueryParamter userQuery)
         {
             var Users = await userService.GetAllAsync(userQuery);
@@ -21,6 +23,7 @@ namespace Presentiton
 
         #region Get User By Id
         [HttpGet("{id}")]
+        [Cash]
         public async Task<ActionResult<UserDTO>> GetUserById(int id)
         {
             var User = await userService.GetByIdAsync(id);

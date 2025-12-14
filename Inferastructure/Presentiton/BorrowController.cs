@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared;
 using Shared.DTO.Borrow;
@@ -11,6 +12,7 @@ namespace Presentiton
     {
         #region Get All Borrow
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<BorrowDTO>>> GetAllBorrow([FromQuery] BorrowQueryParamter borrowQuery)
         {
             var Borrows = await _borrowService.GetAllAsync(borrowQuery);
@@ -21,6 +23,7 @@ namespace Presentiton
         #region Get Borrow By Id
 
         [HttpGet("{userId:int}/{bookId:int}/{dateBorrow}")]
+        [Cash]
         public async Task<ActionResult<BorrowDTO>> GetBorrow(
             int userId, int bookId, DateTime dateBorrow)
         {

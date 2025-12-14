@@ -1,4 +1,5 @@
-﻿using Domain_Layer.Contract.Seeding;
+﻿using Domain_Layer.Contract.Cash;
+using Domain_Layer.Contract.Seeding;
 using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Models.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,6 +14,7 @@ using Persistence.Seeding;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Mapper;
 using Service_Implemention.Service;
+using StackExchange.Redis;
 using System.Security.Claims;
 using System.Text;
 
@@ -96,6 +98,17 @@ namespace Library.Web
 
             builder.Services.AddAutoMapper(M => M.AddProfile(new MapingProfile()));
 
+            #region ConnectionMultiplexer
+            builder.Services.AddSingleton<IConnectionMultiplexer>((_) =>
+            {
+                return ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("RediusConnection")!);
+            });
+
+
+            builder.Services.AddScoped<ICashRepo, CashRepositary>();
+            builder.Services.AddScoped<ICashService, CashService>();
+
+            #endregion
 
             #region Identity
             builder.Services.AddDbContext<LibraryIdentityContext>(options =>

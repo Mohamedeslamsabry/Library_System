@@ -35,7 +35,6 @@ namespace Presentiton
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest model, CancellationToken ct)
         {
             var ok = await _authentctionService.ResetPasswordLinkAsync(model, ct);
-            // رد عام دائمًا (لا نكشف وجود الإيميل)
             return Ok(new { message = "If the email address is correct, you will receive a link to reset your password." });
         }
 
@@ -60,19 +59,19 @@ namespace Presentiton
             if (string.IsNullOrWhiteSpace(model.CurrentPassword) ||
                 string.IsNullOrWhiteSpace(model.NewPassword))
             {
-                return BadRequest(new { message = "CurrentPassword و NewPassword مطلوبتان." });
+                return BadRequest(new { message = "CurrentPassword و NewPassword Required." });
             }
 
             if (model.NewPassword.Length < 8)
             {
-                return BadRequest(new { message = "كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل." });
+                return BadRequest(new { message = "The new password must be at least 8 characters long." });
             }
 
             var ok = await _authentctionService.ChangePasswordAsync(User, model, ct);
             if (!ok)
-                return BadRequest(new { message = "فشل تغيير كلمة المرور. تأكد من كلمة المرور الحالية أو سياسة كلمة المرور." });
+                return BadRequest(new { message = "Password change failed. Please check your current password or password policy.." });
 
-            return Ok(new { message = "تم تغيير كلمة المرور بنجاح." });
+            return Ok(new { message = "The password has been successfully changed.." });
 
 
         }
@@ -104,9 +103,9 @@ namespace Presentiton
         public async Task<IActionResult> LogoutAll(CancellationToken ct)
         {
             var ok = await _authentctionService.LogoutAllAsync(User, ct);
-            if (!ok) return Unauthorized(new { message = "المستخدم غير معروف." });
+            if (!ok) return Unauthorized(new { message = "User unknown." });
 
-            return Ok(new { message = "تم تسجيل الخروج من كل الجلسات. الرجاء حذف التوكين الحالي." });
+            return Ok(new { message = "You have been logged out of all sessions. Please delete the current token.." });
         }
         #endregion
 
@@ -119,7 +118,6 @@ namespace Presentiton
             if (string.IsNullOrEmpty(jti))
                 return BadRequest(new { message = "JTI claim is missing." });
 
-            // استخرج وقت انتهاء التوكن الحالي (exp) لو حابب تنظّف بعده
             var expUnix = User.FindFirst("exp")?.Value;
 
             var expiresAt = DateTime.UtcNow.AddHours(2);
@@ -127,7 +125,7 @@ namespace Presentiton
                 expiresAt = DateTimeOffset.FromUnixTimeSeconds(expVal).UtcDateTime;
 
             await revokedStore.RevokeAsync(jti, expiresAt);
-            return Ok(new { message = "تم تسجيل الخروج من الجلسة الحالية." });
+            return Ok(new { message = "Logged out of the current session." });
         }
         #endregion
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared;
 using Shared.DTO.Book;
@@ -11,6 +12,7 @@ namespace Presentiton
     {
         #region Get All Book
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<BookDTO>>> GetAllBook([FromQuery] BookQueryPartmer bookQuery)
         {
             var Books = await _bookService.GetAllAsync(bookQuery);
@@ -20,6 +22,7 @@ namespace Presentiton
 
         #region Get Book By Id
         [HttpGet("{id}")]
+        [Cash]
         public async Task<ActionResult<BookDTO>> GetBookById(int id)
         {
             var Book = await _bookService.GetByIdAsync(id);

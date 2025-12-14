@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared.DTO.Shelf;
 
@@ -11,6 +12,7 @@ namespace Presentiton
         #region Get All Shelf
 
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<ShelfDTO>>> GetAllShelves()
         {
             var shelves = await _shelfService.GetAllAsync();
@@ -20,6 +22,7 @@ namespace Presentiton
 
         #region Get Shelf By Id
         [HttpGet("{Id}")]
+        [Cash]
         public async Task<ActionResult<ShelfDTO>> GetShelfById(int Id)
         {
             var shelf = await _shelfService.GetByIdAsync(Id);

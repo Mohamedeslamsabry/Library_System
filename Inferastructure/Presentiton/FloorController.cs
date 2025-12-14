@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared.DTO.Floor;
 
@@ -11,6 +12,7 @@ namespace Presentiton
         #region Get All Floor
 
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<FloorDTO>>> GetAllFloor()
         {
             var Floors = await _floorService.GetAllAsync();
@@ -20,6 +22,7 @@ namespace Presentiton
 
         #region Get Floor By Id
         [HttpGet("{FloorNumber}")]
+        [Cash]
         public async Task<ActionResult<FloorDTO>> GetShelfById(int FloorNumber)
         {
             var Floor = await _floorService.GetByIdAsync(FloorNumber);

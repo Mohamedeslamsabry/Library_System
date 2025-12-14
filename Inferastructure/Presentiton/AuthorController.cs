@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared;
 using Shared.DTO.authors;
@@ -11,6 +12,7 @@ namespace Presentiton
     {
         #region Get All Author
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<AuthorDTO>>> GetAllAuthor([FromQuery] AuthorsQueryParamter authorsQuery)
         {
             var Authors = await _authorsService.GetAllAsync(authorsQuery);

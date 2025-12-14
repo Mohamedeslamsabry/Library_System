@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared;
 using Shared.DTO.Publisher;
@@ -11,6 +12,7 @@ namespace Presentiton
     {
         #region Get All Publisher
         [HttpGet]
+        [Cash]
         public async Task<ActionResult<IEnumerable<PublisherDTO>>> GetAllPublisher([FromQuery] PublisherQueryParamter publisherQuery)
         {
             var Publisher = await _publisherService.GetAllAsync(publisherQuery);
@@ -20,6 +22,7 @@ namespace Presentiton
 
         #region Get Publisher By Id
         [HttpGet("{Id}")]
+        [Cash]
         public async Task<ActionResult<PublisherDTO>> GetPublisherById(int Id)
         {
             var Publisher = await _publisherService.GetByIdAsync(Id);
