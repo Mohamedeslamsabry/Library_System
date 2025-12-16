@@ -62,15 +62,9 @@ namespace Shared.DTO.Employee
 
       
 
-        // Relationships (اختياري)
-        // R02: الموظف يعمل في دور (Floor Work)
         public int? floorsNumberWork { get; set; }
 
-        //// رقم الدور للعرض فقط (لو بتسجّله مع الإنشاء)
-        //public int? FloorsNumber { get; set; }
 
-
-        // R04: المشرف (Self-Reference)
         public int? SupervisorId { get; set; }
     }
 }

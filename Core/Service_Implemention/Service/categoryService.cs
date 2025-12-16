@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Models.Categories_Models;
-using Domain_Layer.Models.Employee_Models;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
 using Shared.DTO.Categories;
-using Shared.DTO.Employee;
 
 namespace Service_Implemention.Service
 {

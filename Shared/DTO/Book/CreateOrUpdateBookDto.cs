@@ -9,7 +9,6 @@
         public int? ShelfId { get; set; }
         public int? CategoryId { get; set; }
         public int? PublisherId { get; set; }
-        // Authors
         public List<int>? AuthorIds { get; set; } = new();
     }
 }

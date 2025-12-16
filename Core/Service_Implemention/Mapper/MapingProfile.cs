@@ -26,6 +26,19 @@ namespace Service_Implemention.Mapper
     {
         public MapingProfile() : base()
         {
+            EmployeeMaping();
+            FloorMaping();
+            UserMaping();
+            Shelfmaping();
+            PublisherMaping();
+            BookMaping();
+            AuthorMaping();
+            CategoriesMaping();
+            BorrowMaping();
+        }
+
+        private void EmployeeMaping()
+        {
             #region Get Employee
 
             // Employee => EmployeeDto
@@ -84,7 +97,10 @@ namespace Service_Implemention.Mapper
             //    BuildingNumber = src.BuildingNumber
             //})); 
             #endregion
+        }
 
+        private void FloorMaping()
+        {
             #region Get Floors
 
             // Entity -> DTO
@@ -123,7 +139,30 @@ namespace Service_Implemention.Mapper
                        .ForMember(s => s.Number_of_Blocks, opt => opt.MapFrom(d => d.Number_of_Blocks))
                        .ForMember(s => s.EmployeeMangeId, opt => opt.MapFrom(d => d.ManagerId));
             #endregion
+        }
+        
+        private void UserMaping()
+        {
+            #region User
 
+            CreateMap<Users, UserDTO>()
+                .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.Gender.ToString()))
+                 .ForMember(d => d.Employee, opt => opt.MapFrom(s => s.Employee));
+
+
+            CreateMap<CreateOrUpdateUserDTO, Users>();
+
+
+            // اختياري: خريطة الموظف المختصر
+            CreateMap<Employee, EmployeeShortDto>()
+                           .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}"));
+
+
+            #endregion
+        }
+
+        private void Shelfmaping()
+        {
             #region Get Shelf
 
             // Shelf -> ShelfDetailsDTO (تفاصيل)
@@ -150,7 +189,10 @@ namespace Service_Implemention.Mapper
             #region Create Or Update Shelf
             CreateMap<CreateOrUpdateShelfDTO, Shelf>();
             #endregion
+        }
 
+        private void PublisherMaping()
+        {
             #region  Publishers
 
             CreateMap<Puplishers, PublisherDTO>()
@@ -163,24 +205,10 @@ namespace Service_Implemention.Mapper
             CreateMap<Book, BookShortDto>();
 
             #endregion
+        }
 
-            #region User
-
-            CreateMap<Users, UserDTO>()
-                .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.Gender.ToString()))
-                 .ForMember(d => d.Employee, opt => opt.MapFrom(s => s.Employee));
-
-
-            CreateMap<CreateOrUpdateUserDTO, Users>();
-
-
-            // اختياري: خريطة الموظف المختصر
-            CreateMap<Employee, EmployeeShortDto>()
-                           .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}"));
-
-
-            #endregion
-
+        private void BookMaping()
+        {
             #region Book
 
             CreateMap<Book, BookDTO>()
@@ -211,11 +239,11 @@ namespace Service_Implemention.Mapper
                                      .Count(b => b.DueDate < DateTime.UtcNow))) // استخدم Utc لضمان ثبات التوقيت
                              .ForMember(d => d.IsLikelyActive, opt => opt.MapFrom(s =>
                                  (s.Borrows ?? Enumerable.Empty<Borrow>())
-                  
+
                     .OrderByDescending(b => b.DateBorrow)
                                      .Select(b => (DateTime?)b.DueDate)
                                      .FirstOrDefault() >= DateTime.UtcNow));
-            
+
 
 
 
@@ -259,7 +287,10 @@ namespace Service_Implemention.Mapper
                            }
                        });
             #endregion
+        }
 
+        private void AuthorMaping()
+        {
             #region authors
 
             CreateMap<Authors, AuthorDTO>()
@@ -276,7 +307,10 @@ namespace Service_Implemention.Mapper
             .ForMember(d => d.Book_Authors, opt => opt.Ignore());
 
             #endregion
+        }
 
+        private void CategoriesMaping()
+        {
             #region Categories
 
             CreateMap<Categories, CategorieDTO>()
@@ -285,7 +319,10 @@ namespace Service_Implemention.Mapper
                     (s.Book ?? Enumerable.Empty<Book>()).Select(b => b.Id)));
 
             #endregion
+        }
 
+        private void BorrowMaping()
+        {
             #region Borrow
 
 

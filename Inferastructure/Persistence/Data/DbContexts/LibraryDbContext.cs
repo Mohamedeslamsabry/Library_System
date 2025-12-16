@@ -9,7 +9,6 @@ using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shelf_Models;
 using Domain_Layer.Models.Users_Models;
 using Microsoft.EntityFrameworkCore;
-using System.Numerics;
 using System.Reflection;
 
 namespace Persistence.Data.DbContexts

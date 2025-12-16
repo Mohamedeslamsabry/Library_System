@@ -9,6 +9,7 @@ using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
 using Shared.DTO.Borrow;
+using Shared.Error;
 
 namespace Service_Implemention.Service
 {
@@ -50,161 +51,186 @@ namespace Service_Implemention.Service
 
         #region Create
 
-        public async Task<bool> CreateAsync(CreateOrUpdateBorrowDTO createBorrow)
+        //public async Task<bool> CreateAsync(CreateOrUpdateBorrowDTO createBorrow)
+        //{
+        //    try
+        //    {
+        //        // تحقّق أساسي من القيم
+        //        if (createBorrow is null) return false;
+        //        if (createBorrow.Amount <= 0)
+        //            throw new ArgumentException("الكمية المستعارة يجب أن تكون أكبر من صفر.");
+        //        if (createBorrow.DueDate <= createBorrow.DateBorrow)
+        //            throw new ArgumentException("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الاستعارة.");
+
+        //        // ريبو
+        //        var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
+        //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
+        //        var userRepo = _unitOfWork.GetRepoartory<Users>();
+        //        var empRepo = _unitOfWork.GetRepoartory<Employee>();
+
+        //        // تحقّق من وجود الأطراف
+        //        if (!await userRepo.AnyAsync(u => u.Id == createBorrow.UserId))
+        //            throw new ArgumentException("المستخدم غير موجود.");
+
+        //        if (createBorrow.EmployeeId.HasValue &&
+        //            !await empRepo.AnyAsync(e => e.Id == createBorrow.EmployeeId.Value))
+        //            throw new ArgumentException("الموظف غير موجود.");
+
+        //        var book = await bookRepo.GetByIdAsync(createBorrow.BookId);
+        //        if (book is null)
+        //            throw new ArgumentException("الكتاب غير موجود.");
+
+        //        // مخزون الكتاب
+        //        if (book.Amount < createBorrow.Amount)
+        //            throw new InvalidOperationException("المخزون غير كافٍ لإتمام الاستعارة.");
+
+        //        // خصم من المخزون
+        //        book.Amount -= createBorrow.Amount;
+
+        //        // إنشاء سجل Borrow عبر AutoMapper
+        //        var borrow = _mapper.Map<Borrow>(createBorrow);
+
+        //        await borrowRepo.AddAsync(borrow);
+
+        //        // حفظ
+        //        var ok = await _unitOfWork.SaveChangesAsync() > 0;
+        //        return ok;
+        //    }
+        //    catch
+        //    {
+        //        // TODO: لو عندك ILogger، سجّل الاستثناء هنا
+        //        return false;
+        //    }
+        //}
+
+        public async Task<Result<int>> CreateAsync(CreateOrUpdateBorrowDTO createBorrow)
         {
+            // Basic request validation
+            if (createBorrow is null)
+                return Result<int>.Fail("Request body is missing.", ErrorCodes.ValidationNull);
+
+            if (createBorrow.Amount <= 0)
+                return Result<int>.Fail("Borrow amount must be greater than zero.", ErrorCodes.AmountInvalid);
+
+            if (createBorrow.DueDate <= createBorrow.DateBorrow)
+                return Result<int>.Fail("Due date must be after borrow date.", ErrorCodes.DueDateInvalid);
+
             try
             {
-                // تحقّق أساسي من القيم
-                if (createBorrow is null) return false;
-                if (createBorrow.Amount <= 0)
-                    throw new ArgumentException("الكمية المستعارة يجب أن تكون أكبر من صفر.");
-                if (createBorrow.DueDate <= createBorrow.DateBorrow)
-                    throw new ArgumentException("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الاستعارة.");
-
-                // ريبو
+                // Repositories
                 var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
                 var bookRepo = _unitOfWork.GetRepoartory<Book>();
                 var userRepo = _unitOfWork.GetRepoartory<Users>();
                 var empRepo = _unitOfWork.GetRepoartory<Employee>();
 
-                // تحقّق من وجود الأطراف
-                if (!await userRepo.AnyAsync(u => u.Id == createBorrow.UserId))
-                    throw new ArgumentException("المستخدم غير موجود.");
+                // Validate parties
+                var userExists = await userRepo.AnyAsync(u => u.Id == createBorrow.UserId);
+                if (!userExists)
+                    return Result<int>.Fail("User not found.", ErrorCodes.UserNotFound);
 
-                if (createBorrow.EmployeeId.HasValue &&
-                    !await empRepo.AnyAsync(e => e.Id == createBorrow.EmployeeId.Value))
-                    throw new ArgumentException("الموظف غير موجود.");
+                if (createBorrow.EmployeeId.HasValue)
+                {
+                    var employeeExists = await empRepo.AnyAsync(e => e.Id == createBorrow.EmployeeId.Value);
+                    if (!employeeExists)
+                        return Result<int>.Fail("Employee not found.", ErrorCodes.EmployeeNotFound);
+                }
 
+                // Load book & validate stock
                 var book = await bookRepo.GetByIdAsync(createBorrow.BookId);
                 if (book is null)
-                    throw new ArgumentException("الكتاب غير موجود.");
+                    return Result<int>.Fail("Book not found.", ErrorCodes.BookNotFound);
 
-                // مخزون الكتاب
                 if (book.Amount < createBorrow.Amount)
-                    throw new InvalidOperationException("المخزون غير كافٍ لإتمام الاستعارة.");
+                    return Result<int>.Fail("Insufficient stock to complete the borrow.", ErrorCodes.StockInsufficient);
 
-                // خصم من المخزون
+                // Deduct stock
                 book.Amount -= createBorrow.Amount;
 
-                // إنشاء سجل Borrow عبر AutoMapper
+                // Create Borrow via AutoMapper
                 var borrow = _mapper.Map<Borrow>(createBorrow);
 
                 await borrowRepo.AddAsync(borrow);
 
-                // حفظ
-                var ok = await _unitOfWork.SaveChangesAsync() > 0;
-                return ok;
+                // Persist changes
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed);
+
+                return Result<int>.Ok(borrow.Id, "Borrow created successfully.");
             }
-            catch
+            catch (OperationCanceledException)
             {
-                // TODO: لو عندك ILogger، سجّل الاستثناء هنا
-                return false;
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
+            }
+            catch (AutoMapperMappingException)
+            {
+                return Result<int>.Fail("Data mapping failed.", ErrorCodes.MappingError);
+            }
+            catch (DbUpdateException)
+            {
+                // Likely FK constraint or other DB error
+                return Result<int>.Fail("Database update failed during create.", ErrorCodes.DbUpdateError);
+            }
+            catch (Exception)
+            {
+                return Result<int>.Fail("An unexpected error occurred.", ErrorCodes.Unexpected);
             }
         }
 
         #endregion
 
         #region Update
-
-        //public async Task<bool> UpdateAsync(int id, CreateOrUpdateBorrowDTO updateBorrow)
+        //public async Task<bool> UpdateByKeyAsync(int oldUserId, int oldBookId, DateTime oldDateBorrow, CreateOrUpdateBorrowDTO newBorrow)
         //{
         //    try
         //    {
-        //        if (updateBorrow is null) return false;
-
-        //        // تحقق أساسي من القيم
-        //        if (updateBorrow.Amount <= 0)
+        //        if (newBorrow is null) return false;
+        //        if (newBorrow.Amount <= 0)
         //            throw new ArgumentException("الكمية المستعارة يجب أن تكون أكبر من صفر.");
-
-        //        if (updateBorrow.DueDate <= updateBorrow.DateBorrow)
+        //        if (newBorrow.DueDate <= newBorrow.DateBorrow)
         //            throw new ArgumentException("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الاستعارة.");
 
-        //        // الريبو
         //        var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
         //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
         //        var userRepo = _unitOfWork.GetRepoartory<Users>();
         //        var empRepo = _unitOfWork.GetRepoartory<Employee>();
 
-        //        // جلب سجل الاستعارة (Tracked)
-        //        var borrow = await borrowRepo.GetByIdAsync(id);
-        //        if (borrow is null) return false;
+        //        // هات القديم
+        //        var oldList = await borrowRepo.GetAllAsync(b =>
+        //            b.UserId == oldUserId &&
+        //            b.BookId == oldBookId &&
+        //            b.DateBorrow == oldDateBorrow);
+        //        var oldBorrow = oldList.FirstOrDefault();
+        //        if (oldBorrow is null) return false;
 
-        //        // تحقق من وجود الأطراف الجديدة
-        //        if (!await userRepo.AnyAsync(u => u.Id == updateBorrow.UserId))
-        //            throw new ArgumentException("المستخدم غير موجود.");
+        //        // تحقّق الأطراف الجديدة
+        //        if (!await userRepo.AnyAsync(u => u.Id == newBorrow.UserId))
+        //            throw new ArgumentException("المستخدم الجديد غير موجود.");
+        //        if (newBorrow.EmployeeId.HasValue &&
+        //            !await empRepo.AnyAsync(e => e.Id == newBorrow.EmployeeId.Value))
+        //            throw new ArgumentException("الموظف الجديد غير موجود.");
 
-        //        if (updateBorrow.EmployeeId.HasValue &&
-        //            !await empRepo.AnyAsync(e => e.Id == updateBorrow.EmployeeId.Value))
-        //            throw new ArgumentException("الموظف غير موجود.");
-
-        //        // جلب الكتب المعنيّة
-        //        var oldBook = await bookRepo.GetByIdAsync(borrow.BookId);
+        //        // رجّع مخزون الكتاب القديم بالكامل
+        //        var oldBook = await bookRepo.GetByIdAsync(oldBorrow.BookId);
         //        if (oldBook is null) throw new ArgumentException("الكتاب القديم غير موجود.");
+        //        oldBook.Amount += oldBorrow.Amount;
 
-        //        Book? newBook = oldBook;
-        //        if (updateBorrow.BookId != borrow.BookId)
-        //        {
-        //            newBook = await bookRepo.GetByIdAsync(updateBorrow.BookId);
-        //            if (newBook is null) throw new ArgumentException("الكتاب الجديد غير موجود.");
-        //        }
+        //        // جهّز السجل الجديد
+        //        var newBook = await bookRepo.GetByIdAsync(newBorrow.BookId);
+        //        if (newBook is null) throw new ArgumentException("الكتاب الجديد غير موجود.");
+        //        if (newBook.Amount < newBorrow.Amount)
+        //            throw new InvalidOperationException("المخزون غير كافٍ في الكتاب الجديد.");
 
-        //        // حساب الفرق في الكمية
-        //        int oldAmt = borrow.Amount;
-        //        int newAmt = updateBorrow.Amount;
+        //        newBook.Amount -= newBorrow.Amount;
 
-        //        if (updateBorrow.BookId != borrow.BookId)
-        //        {
-        //            // تغيّر الكتاب:
-        //            // 1) إعادة مخزون الكتاب القديم بقيمة الاستعارة القديمة
-        //            oldBook.Amount += oldAmt;
+        //        // احذف القديم
+        //        borrowRepo.Remove(oldBorrow);
 
-        //            // 2) خصم من مخزون الكتاب الجديد بقيمة الاستعارة الجديدة
-        //            if (newBook!.Amount < newAmt)
-        //                throw new InvalidOperationException("المخزون غير كافٍ في الكتاب الجديد.");
-
-        //            newBook.Amount -= newAmt;
-
-        //            // تعيين الكتاب الجديد في السجل
-        //            borrow.BookId = updateBorrow.BookId;
-        //        }
-        //        else
-        //        {
-        //            // نفس الكتاب: عدّل المخزون بالفرق
-        //            int delta = newAmt - oldAmt;
-        //            if (delta > 0)
-        //            {
-        //                // زيادة الاستعارة → خصم من المخزون
-        //                if (oldBook.Amount < delta)
-        //                    throw new InvalidOperationException("المخزون غير كافٍ لزيادة الكمية المستعارة.");
-
-        //                oldBook.Amount -= delta;
-        //            }
-        //            else if (delta < 0)
-        //            {
-        //                // تقليل الاستعارة → إعادة للمخزون
-        //                oldBook.Amount += (-delta);
-        //            }
-        //            // لو delta == 0 → لا تغيير في المخزون
-        //        }
-
-        //        // تحديث باقي الحقول
-        //        borrow.UserId = updateBorrow.UserId;
-        //        borrow.EmployeeId = updateBorrow.EmployeeId; // قد تكون null
-        //        borrow.DateBorrow = updateBorrow.DateBorrow;
-        //        borrow.DueDate = updateBorrow.DueDate;
-        //        borrow.Amount = newAmt;
-
-        //        // مابنج اختياري لو حابب تستخدمه للحقول فقط (بدون النفيجيشن):
-        //        // _mapper.Map(updateBorrow, borrow);
-
-        //        borrowRepo.Update(borrow);
+        //        // أضف الجديد
+        //        var newEntity = _mapper.Map<Borrow>(newBorrow);
+        //        await borrowRepo.AddAsync(newEntity);
 
         //        return await _unitOfWork.SaveChangesAsync() > 0;
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        // لو عايز: سجّل الاستثناء وتعامل مع التزامن التفاؤلي لو فعّلت RowVersion على Book/Borrow
-        //        return false;
         //    }
         //    catch
         //    {
@@ -212,165 +238,161 @@ namespace Service_Implemention.Service
         //    }
         //}
 
-        //public async Task<bool> UpdateByKeyAsync(int userId, int bookId, DateTime dateBorrow, CreateOrUpdateBorrowDTO dto)
+        public async Task<Result<int>> UpdateByKeyAsync(
+            int oldUserId,
+            int oldBookId,
+            DateTime oldDateBorrow,
+            CreateOrUpdateBorrowDTO newBorrow)
+        {
+            // 0) Basic request validation
+            if (newBorrow is null)
+                return Result<int>.Fail("Request body is missing.", ErrorCodes.ValidationNull);
+
+            if (newBorrow.Amount <= 0)
+                return Result<int>.Fail("Borrow amount must be greater than zero.", ErrorCodes.AmountInvalid);
+
+            if (newBorrow.DueDate <= newBorrow.DateBorrow)
+                return Result<int>.Fail("Due date must be after borrow date.", ErrorCodes.DueDateInvalid);
+
+            try
+            {
+                var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
+                var bookRepo = _unitOfWork.GetRepoartory<Book>();
+                var userRepo = _unitOfWork.GetRepoartory<Users>();
+                var empRepo = _unitOfWork.GetRepoartory<Employee>();
+
+                // 1) Fetch old borrow (by composite key)
+                var oldList = await borrowRepo.GetAllAsync(b =>
+                    b.UserId == oldUserId &&
+                    b.BookId == oldBookId &&
+                    b.DateBorrow == oldDateBorrow);
+
+                var oldBorrow = oldList.FirstOrDefault();
+                if (oldBorrow is null)
+                    return Result<int>.Fail("Original borrow record not found.", ErrorCodes.OldBorrowNotFound);
+
+                // 2) Validate new parties
+                var userExists = await userRepo.AnyAsync(u => u.Id == newBorrow.UserId);
+                if (!userExists)
+                    return Result<int>.Fail("User not found.", ErrorCodes.UserNotFound);
+
+                if (newBorrow.EmployeeId.HasValue)
+                {
+                    var employeeExists = await empRepo.AnyAsync(e => e.Id == newBorrow.EmployeeId.Value);
+                    if (!employeeExists)
+                        return Result<int>.Fail("Employee not found.", ErrorCodes.EmployeeNotFound);
+                }
+
+                // 3) Check for duplicate on *new* composite key before changing anything
+                var duplicateExists = await borrowRepo.AnyAsync(b =>
+                    b.UserId == newBorrow.UserId &&
+                    b.BookId == newBorrow.BookId &&
+                    b.DateBorrow == newBorrow.DateBorrow);
+                if (duplicateExists)
+                    return Result<int>.Fail("A borrow record already exists for the given user, book, and date.", ErrorCodes.BorrowDuplicate);
+
+                // 4) Load books (old & new)
+                var oldBook = await bookRepo.GetByIdAsync(oldBorrow.BookId);
+                if (oldBook is null)
+                    return Result<int>.Fail("Original book not found.", ErrorCodes.BookNotFound);
+
+                var newBook = await bookRepo.GetByIdAsync(newBorrow.BookId);
+                if (newBook is null)
+                    return Result<int>.Fail("New book not found.", ErrorCodes.BookNotFound);
+
+                // 5) Adjust stock safely
+                if (oldBorrow.BookId == newBorrow.BookId)
+                {
+                    // Same book: adjust by the difference
+                    var delta = newBorrow.Amount - oldBorrow.Amount; // positive means need more stock
+                    if (delta > 0 && newBook.Amount < delta)
+                        return Result<int>.Fail("Insufficient stock in the selected book.", ErrorCodes.StockInsufficient);
+
+                    newBook.Amount -= delta; // delta could be negative (adds back stock)
+                }
+                else
+                {
+                    // Different books: return old, deduct new
+                    oldBook.Amount += oldBorrow.Amount;
+
+                    if (newBook.Amount < newBorrow.Amount)
+                        return Result<int>.Fail("Insufficient stock in the selected book.", ErrorCodes.StockInsufficient);
+
+                    newBook.Amount -= newBorrow.Amount;
+                }
+
+                // 6) Replace the borrow record
+                borrowRepo.Remove(oldBorrow);
+
+                var newEntity = _mapper.Map<Borrow>(newBorrow);
+                await borrowRepo.AddAsync(newEntity);
+
+                // 7) Persist all changes atomically
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed);
+
+                // NOTE: if Borrow has no surrogate Id and uses composite keys only,
+                // consider returning a        // consider returning a DTO with the composite key instead of int.
+                return Result<int>.Ok(newEntity.Id, "Borrow updated successfully.");
+            }
+            catch (OperationCanceledException)
+            {
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Result<int>.Fail("Concurrency conflict while updating.", ErrorCodes.ConcurrencyError);
+            }
+            catch (AutoMapperMappingException)
+            {
+                return Result<int>.Fail("Data mapping failed.", ErrorCodes.MappingError);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("Database update failed during update.", ErrorCodes.DbUpdateError);
+            }
+            catch (Exception)
+            {
+                return Result<int>.Fail("An unexpected error occurred.", ErrorCodes.Unexpected);
+            }
+        }
+        #endregion
+
+        #region Delete
+
+        //public async Task<bool> DeleteByKeyAsync(int userId, int bookId, DateTime dateBorrow)
         //{
         //    try
         //    {
-        //        if (dto is null) return false;
-        //        if (dto.Amount <= 0)
-        //            throw new ArgumentException("الكمية المستعارة يجب أن تكون أكبر من صفر.");
-        //        if (dto.DueDate <= dto.DateBorrow)
-        //            throw new ArgumentException("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الاستعارة.");
-
         //        var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
         //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
-        //        var userRepo = _unitOfWork.GetRepoartory<Users>();
-        //        var empRepo = _unitOfWork.GetRepoartory<Employee>();
 
-        //        // 1) هات السجل بالمفتاح المركّب (بدون Query())
+        //        // 1) هات السجل بالمفتاح المركّب (بدون Query)
         //        var list = await borrowRepo.GetAllAsync(b =>
         //            b.UserId == userId &&
         //            b.BookId == bookId &&
         //            b.DateBorrow == dateBorrow);
 
         //        var borrow = list.FirstOrDefault();
-        //        if (borrow is null) return false;
+        //        if (borrow is null) return false; // NotFound
 
-        //        // 2) تحقّق الأطراف (على القيم الجديدة)
-        //        if (!await userRepo.AnyAsync(u => u.Id == dto.UserId))
-        //            throw new ArgumentException("المستخدم غير موجود.");
-        //        if (dto.EmployeeId.HasValue &&
-        //            !await empRepo.AnyAsync(e => e.Id == dto.EmployeeId.Value))
-        //            throw new ArgumentException("الموظف غير موجود.");
-
-        //        // 3) ممنوع تغيير قيم الـ PK في هذا السيناريو
-        //        if (dto.UserId != userId || dto.BookId != bookId || dto.DateBorrow != dateBorrow)
-        //            throw new InvalidOperationException("لا يمكن تغيير UserId/BookId/DateBorrow في هذا التحديث. استخدم مسار نقل (Delete + Insert).");
-
-        //        // 4) عدّل المخزون لو تغيّر Amount
-        //        var book = await bookRepo.GetByIdAsync(borrow.BookId);
-        //        if (book is null) throw new ArgumentException("الكتاب غير موجود.");
-
-        //        int oldAmt = borrow.Amount;
-        //        int newAmt = dto.Amount;
-        //        int delta = newAmt - oldAmt;
-
-        //        if (delta > 0)
-        //        {
-        //            // زيادة الاستعارة => خصم من المخزون
-        //            if (book.Amount < delta)
-        //                throw new InvalidOperationException("المخزون غير كافٍ لزيادة الكمية.");
-        //            book.Amount -= delta;
-        //        }
-        //        else if (delta < 0)
-        //        {
-        //            // تقليل الاستعارة => إعادة للمخزون
-        //            book.Amount += (-delta);
-        //        }
-
-        //        // 5) حدّث بقية الحقول غير المفتاحية
-        //        borrow.EmployeeId = dto.EmployeeId;
-        //        borrow.DueDate = dto.DueDate;
-        //        borrow.Amount = newAmt;
-        //        // ملاحظة: DateBorrow جزء من الـ PK في هذا السيناريو فلا نغيّره
-        //        // أيضاً UserId/BookId لا نغيرهم هنا
-
-        //        borrowRepo.Update(borrow);
-        //        return await _unitOfWork.SaveChangesAsync() > 0;
-        //    }
-        //    catch
-        //    {
-        //        return false;
-        //    }
-        //}
-
-        public async Task<bool> UpdateByKeyAsync(int oldUserId, int oldBookId, DateTime oldDateBorrow, CreateOrUpdateBorrowDTO newBorrow)
-        {
-            try
-            {
-                if (newBorrow is null) return false;
-                if (newBorrow.Amount <= 0)
-                    throw new ArgumentException("الكمية المستعارة يجب أن تكون أكبر من صفر.");
-                if (newBorrow.DueDate <= newBorrow.DateBorrow)
-                    throw new ArgumentException("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الاستعارة.");
-
-                var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
-                var bookRepo = _unitOfWork.GetRepoartory<Book>();
-                var userRepo = _unitOfWork.GetRepoartory<Users>();
-                var empRepo = _unitOfWork.GetRepoartory<Employee>();
-
-                // هات القديم
-                var oldList = await borrowRepo.GetAllAsync(b =>
-                    b.UserId == oldUserId &&
-                    b.BookId == oldBookId &&
-                    b.DateBorrow == oldDateBorrow);
-                var oldBorrow = oldList.FirstOrDefault();
-                if (oldBorrow is null) return false;
-
-                // تحقّق الأطراف الجديدة
-                if (!await userRepo.AnyAsync(u => u.Id == newBorrow.UserId))
-                    throw new ArgumentException("المستخدم الجديد غير موجود.");
-                if (newBorrow.EmployeeId.HasValue &&
-                    !await empRepo.AnyAsync(e => e.Id == newBorrow.EmployeeId.Value))
-                    throw new ArgumentException("الموظف الجديد غير موجود.");
-
-                // رجّع مخزون الكتاب القديم بالكامل
-                var oldBook = await bookRepo.GetByIdAsync(oldBorrow.BookId);
-                if (oldBook is null) throw new ArgumentException("الكتاب القديم غير موجود.");
-                oldBook.Amount += oldBorrow.Amount;
-
-                // جهّز السجل الجديد
-                var newBook = await bookRepo.GetByIdAsync(newBorrow.BookId);
-                if (newBook is null) throw new ArgumentException("الكتاب الجديد غير موجود.");
-                if (newBook.Amount < newBorrow.Amount)
-                    throw new InvalidOperationException("المخزون غير كافٍ في الكتاب الجديد.");
-
-                newBook.Amount -= newBorrow.Amount;
-
-                // احذف القديم
-                borrowRepo.Remove(oldBorrow);
-
-                // أضف الجديد
-                var newEntity = _mapper.Map<Borrow>(newBorrow);
-                await borrowRepo.AddAsync(newEntity);
-
-                return await _unitOfWork.SaveChangesAsync() > 0;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        #endregion
-
-        #region Delete
-        //public async Task<bool> DeleteAsync(int id)
-        //{
-        //    try
-        //    {
-        //        var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
-        //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
-
-        //        // جلب سجل الاستعارة (Tracked)
-        //        var borrow = await borrowRepo.GetByIdAsync(id);
-        //        if (borrow is null) return false;
-
-        //        // جلب الكتاب المرتبط لتحديث المخزون
+        //        // 2) هات الكتاب وارجع المخزون
         //        var book = await bookRepo.GetByIdAsync(borrow.BookId);
         //        if (book is null) throw new ArgumentException("Book not found.");
 
         //        // إعادة المخزون بالكمية المستعارة
         //        book.Amount += borrow.Amount;
 
-        //        // حذف السجل
+        //        // 3) احذف السجل
         //        borrowRepo.Remove(borrow);
 
+        //        // 4) حفظ
         //        return await _unitOfWork.SaveChangesAsync() > 0;
         //    }
         //    catch (DbUpdateException ex)
         //    {
-        //        // لو فيه قيود مانعة (FK/سياسات)، سجّل السبب (اختياري)
+        //        //            // لو فيه قيود FK تمنع الحذف (سياساتك)، سجّل السبب
         //        Console.WriteLine(ex.Message);
         //        return false;
         //    }
@@ -380,47 +402,56 @@ namespace Service_Implemention.Service
         //    }
         //}
 
-        public async Task<bool> DeleteByKeyAsync(int userId, int bookId, DateTime dateBorrow)
+
+
+        public async Task<Result<int>> DeleteByKeyAsync(int userId, int bookId, DateTime dateBorrow)
         {
             try
             {
                 var borrowRepo = _unitOfWork.GetRepoartory<Borrow>();
                 var bookRepo = _unitOfWork.GetRepoartory<Book>();
 
-                // 1) هات السجل بالمفتاح المركّب (بدون Query)
+                // 1) Fetch the borrow by composite key
                 var list = await borrowRepo.GetAllAsync(b =>
                     b.UserId == userId &&
                     b.BookId == bookId &&
                     b.DateBorrow == dateBorrow);
 
                 var borrow = list.FirstOrDefault();
-                if (borrow is null) return false; // NotFound
+                if (borrow is null)
+                    return Result<int>.Fail("Borrow record not found.", ErrorCodes.BorrowNotFound);
 
-                // 2) هات الكتاب وارجع المخزون
+                // 2) Return stock to the book
                 var book = await bookRepo.GetByIdAsync(borrow.BookId);
-                if (book is null) throw new ArgumentException("Book not found.");
+                if (book is null)
+                    return Result<int>.Fail("Book not found.", ErrorCodes.BookNotFound);
 
-                // إعادة المخزون بالكمية المستعارة
                 book.Amount += borrow.Amount;
 
-                // 3) احذف السجل
+                // 3) Delete the borrow
                 borrowRepo.Remove(borrow);
 
-                // 4) حفظ
-                return await _unitOfWork.SaveChangesAsync() > 0;
+                // 4) Persist
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed, borrow.Id);
+
+                return Result<int>.Ok(borrow.Id, "Borrow deleted successfully.");
             }
-            catch (DbUpdateException ex)
+            catch (OperationCanceledException)
             {
-                //            // لو فيه قيود FK تمنع الحذف (سياساتك)، سجّل السبب
-                Console.WriteLine(ex.Message);
-                return false;
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
             }
-            catch
+            catch (DbUpdateException)
             {
-                return false;
+                // Likely foreign key restriction or other DB-level issue
+                return Result<int>.Fail("Database update failed during delete.", ErrorCodes.DbUpdateError);
+            }
+            catch (Exception)
+            {
+                return Result<int>.Fail("An unexpected error occurred.", ErrorCodes.Unexpected);
             }
         }
-
         #endregion
     }
 }

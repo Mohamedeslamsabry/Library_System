@@ -1,5 +1,6 @@
 ﻿using Shared;
 using Shared.DTO.Book;
+using Shared.Error;
 
 namespace Service_Abstraction.Interfaces
 {
@@ -14,15 +15,15 @@ namespace Service_Abstraction.Interfaces
         #endregion
 
         #region CreateAsync
-        Task<bool> CreateAsync(CreateOrUpdateBookDto createBook);
+        Task<Result<int>> CreateAsync(CreateOrUpdateBookDto createBook);
         #endregion
 
         #region UpdateAsync
-        Task<bool> UpdateAsync(int id, CreateOrUpdateBookDto updateBook);
+        Task<Result<int>> UpdateAsync(int id, CreateOrUpdateBookDto updateBook);
         #endregion
 
         #region DeleteAsync
-        Task<bool> DeleteAsync(int id);
+        Task<Result<int>> DeleteAsync(int id);
         #endregion
     }
 }

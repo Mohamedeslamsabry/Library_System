@@ -1,4 +1,5 @@
 ﻿using Shared.DTO.Shelf;
+using Shared.Error;
 
 namespace Service_Abstraction.Interfaces
 {
@@ -13,15 +14,15 @@ namespace Service_Abstraction.Interfaces
         #endregion
 
         #region CreateAsync
-        Task<bool> CreateAsync(CreateOrUpdateShelfDTO CreateShelf);
+        Task<Result<int>> CreateAsync(CreateOrUpdateShelfDTO CreateShelf);
         #endregion
 
         #region UpdateAsync
-        Task<bool> UpdateAsync(int Id, CreateOrUpdateShelfDTO UpdateShelf);
+        Task<Result<int>> UpdateAsync(int Id, CreateOrUpdateShelfDTO UpdateShelf);
         #endregion
 
         #region DeleteAsync
-        Task<bool> DeleteAsync(int Id);
+        Task<Result<int>> DeleteAsync(int Id);
         #endregion
     }
 }

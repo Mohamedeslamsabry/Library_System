@@ -3,7 +3,6 @@ using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Users_Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
@@ -40,14 +39,12 @@ namespace Service_Implemention.Service
         #endregion
 
         #region CreateAsync
-
         public async Task<CreateUserResult> CreateAsync(CreateOrUpdateUserDTO createUser)
         {
             try
             {
                 var usersRepo = _unitOfWork.GetRepoartory<Users>();
 
-                // ✅ فحص التكرار بكفاءة باستخدام AnyAsync (بدون .Result)
                 var phoneExists = await usersRepo.AnyAsync(x => x.User_Phone == createUser.User_Phone);
                 if (phoneExists)
                 {
@@ -72,7 +69,6 @@ namespace Service_Implemention.Service
                     };
                 }
 
-                // ✅ تحقّق من الموظف المرتبط (إن تم إدخاله)
                 if (createUser.EmployeeId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createUser.EmployeeId))
                 {
@@ -108,7 +104,6 @@ namespace Service_Implemention.Service
             }
             catch (DbUpdateException)
             {
-                // في حال وجود Unique Index على الإيميل/الموبايل ممكن يحصل هنا تعارض
                 return new CreateUserResult
                 {
                     Success = false,
@@ -129,7 +124,6 @@ namespace Service_Implemention.Service
         #endregion
 
         #region UpdateAsync
-
         public async Task<UpdateUserResult> UpdateAsync(int id, CreateOrUpdateUserDTO updateUser)
         {
             try
@@ -147,7 +141,6 @@ namespace Service_Implemention.Service
                     };
                 }
 
-                // ✅ تحقّق من الموظف المرتبط (إن تم إدخاله)
                 if (updateUser.EmployeeId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateUser.EmployeeId))
                 {
@@ -160,7 +153,6 @@ namespace Service_Implemention.Service
                     };
                 }
 
-                // ✅ فحص تكرار الهاتف فقط لو اتغيّر فعلاً
                 if (!string.Equals(user.User_Phone, updateUser.User_Phone, StringComparison.Ordinal))
                 {
                     var phoneExists = await usersRepo.AnyAsync(x => x.User_Phone == updateUser.User_Phone && x.Id != id);
@@ -176,7 +168,6 @@ namespace Service_Implemention.Service
                     }
                 }
 
-                // ✅ فحص تكرار الإيميل فقط لو اتغيّر فعلاً
                 if (!string.Equals(user.User_Email, updateUser.User_Email, StringComparison.OrdinalIgnoreCase))
                 {
                     var emailExists = await usersRepo.AnyAsync(x => x.User_Email == updateUser.User_Email && x.Id != id);
@@ -192,7 +183,6 @@ namespace Service_Implemention.Service
                     }
                 }
 
-                // ✅ نفّذ الماب
                 _mapper.Map(updateUser, user);
 
                 usersRepo.Update(user);
@@ -216,7 +206,6 @@ namespace Service_Implemention.Service
             }
             catch (DbUpdateException)
             {
-                // لو عندك Unique Index على User_Email/User_Phone هتوصل هنا في حال التعارض
                 return new UpdateUserResult
                 {
                     Success = false,
@@ -235,6 +224,6 @@ namespace Service_Implemention.Service
             }
         }
 
-            #endregion
-        }
+        #endregion
     }
+}

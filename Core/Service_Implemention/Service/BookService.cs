@@ -12,6 +12,7 @@ using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
 using Shared.DTO.Book;
+using Shared.Error;
 
 namespace Service_Implemention.Service
 {
@@ -42,42 +43,43 @@ namespace Service_Implemention.Service
         #endregion
 
         #region CreateAsync
-        public async Task<bool> CreateAsync(CreateOrUpdateBookDto createBook)
+        public async Task<Result<int>> CreateAsync(CreateOrUpdateBookDto createBook)
         {
+            if (createBook is null)
+                return Result<int>.Fail("Data not found", ErrorCodes.ValidationNull);
+
+            if (string.IsNullOrWhiteSpace(createBook.Name))
+                return Result<int>.Fail("Book name is required", ErrorCodes.NameRequired);
+
             try
             {
-                // ✅ بلاش .Result — استخدم await
-                bool nameExist = await _unitOfWork
-                    .GetRepoartory<Book>()
-                    .AnyAsync(x => x.Name == createBook.Name); // أو x.TiTle == createBook.Title
+                var bookRepo = _unitOfWork.GetRepoartory<Book>();
+                var linksRepo = _unitOfWork.GetRepoartory<Book_Authors>();
 
-                if (nameExist) return false;
+                var normalizedName = createBook.Name.Trim().ToLower();
+                var nameExists = await bookRepo.AnyAsync(x => x.Name.ToLower() == normalizedName);
+                if (nameExists)
+                    return Result<int>.Fail("The name of the book already exists", ErrorCodes.BookDuplicateName);
 
-                // تحقق من العلاقات (لاحظ استخدام .Value)
                 if (createBook.PublisherId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Puplishers>().AnyAsync(f => f.Id == createBook.PublisherId.Value))
-                    throw new ArgumentException("Publisher does not exist.");
+                    return Result<int>.Fail("Publisher not found", ErrorCodes.PublisherNotFound);
 
                 if (createBook.CategoryId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Categories>().AnyAsync(f => f.Id == createBook.CategoryId.Value))
-                    throw new ArgumentException("Categories does not exist.");
+                    return Result<int>.Fail("Categories not found", ErrorCodes.CategoryNotFound);
 
                 if (createBook.ShelfId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Shelf>().AnyAsync(f => f.Id == createBook.ShelfId.Value))
-                    throw new ArgumentException("Shelf does not exist.");
+                    return Result<int>.Fail("Shelf not found", ErrorCodes.ShelfNotFound);
 
-                // 1) خَلق الكتاب فقط (من غير أي روابط مؤلفين)
                 var book = _mapper.Map<CreateOrUpdateBookDto, Book>(createBook);
-
-                // تأكد إن المجموعة فاضية (لو المابنج كان بيحط حاجة)
                 book.Book_Authors = new HashSet<Book_Authors>();
 
-                await _unitOfWork.GetRepoartory<Book>().AddAsync(book);
+                await bookRepo.AddAsync(book);
                 var saved = await _unitOfWork.SaveChangesAsync() > 0;
-                if (!saved) return false; // لو فشل الحفظ، وقف هنا
-
-                // 2) أضف روابط المؤلفين بعد ما book.Id بقى معروف
-                var linksRepo = _unitOfWork.GetRepoartory<Book_Authors>();
+                if (!saved)
+                    return Result<int>.Fail("Failed to save data", ErrorCodes.DbSaveFailed);
 
                 var authorIds = (createBook.AuthorIds ?? new List<int>())
                                 .Where(id => id > 0)
@@ -86,7 +88,6 @@ namespace Service_Implemention.Service
 
                 foreach (var authorId in authorIds)
                 {
-                    // مهم: تأكد مفيش رابط بنفس المفتاح متتبَّع أو موجود
                     var exists = await linksRepo.AnyAsync(l => l.BookId == book.Id && l.AuthorId == authorId);
                     if (exists) continue;
 
@@ -97,104 +98,181 @@ namespace Service_Implemention.Service
                     });
                 }
 
-                return await _unitOfWork.SaveChangesAsync() > 0;
+                var linksSaved = await _unitOfWork.SaveChangesAsync() > 0;
+
+                return Result<int>.Ok(book.Id, "The book was created successfully");
             }
-            catch
+            catch (OperationCanceledException)
             {
-                return false;
+                return Result<int>.Fail("The operation has been cancelled", ErrorCodes.Canceled);
+            }
+            catch (AutoMapperMappingException)
+            {
+                return Result<int>.Fail("Data conversion failed (Mapping)", ErrorCodes.MappingError);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("A database error occurred during saving.", ErrorCodes.DbUpdateError);
+            }
+            catch (Exception)
+            {
+                return Result<int>.Fail("An unexpected error occurred", ErrorCodes.Unexpected);
             }
         }
         #endregion
 
         #region UpdateAsync
-        public async Task<bool> UpdateAsync(int id, CreateOrUpdateBookDto updateBook)
+        //public async Task<bool> UpdateAsync(int id, CreateOrUpdateBookDto updateBook)
+        //{
+        //    try
+        //    {
+        //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
+
+        //        // تحقّق من الاسم (غَيّر Name إلى TiTle لو الكيان عندك مختلف)
+        //        bool nameExist = await bookRepo.AnyAsync(x => x.Name == updateBook.Name && x.Id != id);
+        //        if (nameExist)
+        //            return false;
+
+        //        // جلب الكتاب (Tracked للـ Lazy Loading)
+        //        var book = await bookRepo.GetByIdAsync(id);
+        //        if (book is null)
+        //            return false;
+
+        //        // التحقق من المفاتيح المرتبطة (استخدم .Value مع nullable)
+        //        if (updateBook.PublisherId.HasValue &&
+        //            !await _unitOfWork.GetRepoartory<Puplishers>()
+        //                .AnyAsync(f => f.Id == updateBook.PublisherId.Value))
+        //            throw new ArgumentException("Publisher does not exist.");
+
+        //        if (updateBook.CategoryId.HasValue &&
+        //            !await _unitOfWork.GetRepoartory<Categories>()
+        //                .AnyAsync(f => f.Id == updateBook.CategoryId.Value))
+        //            throw new ArgumentException("Categories does not exist.");
+
+        //        if (updateBook.ShelfId.HasValue &&
+        //            !await _unitOfWork.GetRepoartory<Shelf>()
+        //                .AnyAsync(f => f.Id == updateBook.ShelfId.Value))
+        //            throw new ArgumentException("Shelf does not exist.");
+
+        //        // مابنج للخصائص البسيطة فقط (Book_Authors متجاهلة في الـ Profile)
+        //        _mapper.Map(updateBook, book);
+
+        //        // مزامنة المؤلفين بشكل نظيف (إضافة/حذف بدون تكرار)
+        //        await SyncAuthorsAsync(book, updateBook.AuthorIds);
+
+        //        bookRepo.Update(book);
+        //        return await _unitOfWork.SaveChangesAsync() > 0;
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        // ممكن تسجّل الاستثناء وتتعامل مع الـ concurrency لو بتستخدمه
+        //        return false;
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        public async Task<Result<int>> UpdateAsync(int id, CreateOrUpdateBookDto updateBook)
         {
+            if (updateBook is null)
+                return Result<int>.Fail("Data not found", ErrorCodes.ValidationNull);
+
+            if (string.IsNullOrWhiteSpace(updateBook.Name))
+                return Result<int>.Fail("Book name is required", ErrorCodes.NameRequired);
+
             try
             {
                 var bookRepo = _unitOfWork.GetRepoartory<Book>();
 
-                // تحقّق من الاسم (غَيّر Name إلى TiTle لو الكيان عندك مختلف)
-                bool nameExist = await bookRepo.AnyAsync(x => x.Name == updateBook.Name && x.Id != id);
-                if (nameExist)
-                    return false;
+                var normalizedName = updateBook.Name.Trim().ToLower();
+                var nameExists = await bookRepo.AnyAsync(x => x.Id != id && x.Name.ToLower() == normalizedName);
+                if (nameExists)
+                    return Result<int>.Fail("The name of the book already exists", ErrorCodes.BookDuplicateName);
 
-                // جلب الكتاب (Tracked للـ Lazy Loading)
                 var book = await bookRepo.GetByIdAsync(id);
                 if (book is null)
-                    return false;
+                    return Result<int>.Fail("Book not found", ErrorCodes.BookNotFound);
 
-                // التحقق من المفاتيح المرتبطة (استخدم .Value مع nullable)
                 if (updateBook.PublisherId.HasValue &&
-                    !await _unitOfWork.GetRepoartory<Puplishers>()
-                        .AnyAsync(f => f.Id == updateBook.PublisherId.Value))
-                    throw new ArgumentException("Publisher does not exist.");
+                    !await _unitOfWork.GetRepoartory<Puplishers>().AnyAsync(f => f.Id == updateBook.PublisherId.Value))
+                    return Result<int>.Fail("Publisher not found", ErrorCodes.PublisherNotFound);
 
                 if (updateBook.CategoryId.HasValue &&
-                    !await _unitOfWork.GetRepoartory<Categories>()
-                        .AnyAsync(f => f.Id == updateBook.CategoryId.Value))
-                    throw new ArgumentException("Categories does not exist.");
+                    !await _unitOfWork.GetRepoartory<Categories>().AnyAsync(f => f.Id == updateBook.CategoryId.Value))
+                    return Result<int>.Fail("Classification not found", ErrorCodes.CategoryNotFound);
 
                 if (updateBook.ShelfId.HasValue &&
-                    !await _unitOfWork.GetRepoartory<Shelf>()
-                        .AnyAsync(f => f.Id == updateBook.ShelfId.Value))
-                    throw new ArgumentException("Shelf does not exist.");
+                    !await _unitOfWork.GetRepoartory<Shelf>().AnyAsync(f => f.Id == updateBook.ShelfId.Value))
+                    return Result<int>.Fail("Shelf not found", ErrorCodes.ShelfNotFound);
 
-                // مابنج للخصائص البسيطة فقط (Book_Authors متجاهلة في الـ Profile)
                 _mapper.Map(updateBook, book);
 
-                // مزامنة المؤلفين بشكل نظيف (إضافة/حذف بدون تكرار)
                 await SyncAuthorsAsync(book, updateBook.AuthorIds);
 
                 bookRepo.Update(book);
-                return await _unitOfWork.SaveChangesAsync() > 0;
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save data", ErrorCodes.DbSaveFailed);
+
+                return Result<int>.Ok(book.Id, "The book has been successfully updated");
+            }
+            catch (OperationCanceledException)
+            {
+                return Result<int>.Fail("The operation has been cancelled", ErrorCodes.Canceled);
             }
             catch (DbUpdateConcurrencyException)
             {
-                // ممكن تسجّل الاستثناء وتتعامل مع الـ concurrency لو بتستخدمه
-                return false;
+                return Result<int>.Fail("Update conflict(Concurrency)", ErrorCodes.ConcurrencyError);
             }
-            catch
+            catch (AutoMapperMappingException)
             {
-                return false;
+                return Result<int>.Fail("Data conversion failed (Mapping)", ErrorCodes.MappingError);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("A database error occurred during saving.", ErrorCodes.DbUpdateError);
+            }
+            catch (Exception)
+            {
+                return Result<int>.Fail("An unexpected error occurred", ErrorCodes.Unexpected);
             }
         }
         #endregion
 
         #region DeleteAsync
+
         //public async Task<bool> DeleteAsync(int id)
         //{
         //    try
         //    {
         //        var bookRepo = _unitOfWork.GetRepoartory<Book>();
-        //        var linkRepo = _unitOfWork.GetRepoartory<Book_Authors>();
-
         //        var book = await bookRepo.GetByIdAsync(id);
         //        if (book is null) return false;
 
-        //        // لو عايز تمنع الحذف لو فيه Borrow مرتبط:
-        //        if (book.Borrow != null) throw new InvalidOperationException("Cannot delete a borrowed book.");
+        //        // اجبار Lazy Loading لتحميل المجموعات
+        //        book.Borrows ??= new HashSet<Borrow>();
+        //        var _borrowsCount = book.Borrows.Count;
 
-        //        // حمّل مجموعة الروابط (لو Lazy Loading عبر proxies، لمس المجموعة بيكفي)
+        //        if (_borrowsCount > 0)
+        //            throw new InvalidOperationException("Cannot delete a book that has borrow records.");
+
+        //        // نفس الشيء لعلاقة Book_Authors إن لم يكن لديك Cascade
         //        book.Book_Authors ??= new HashSet<Book_Authors>();
-        //        var _ = book.Book_Authors.Count; // يجبر Lazy Loading على التحميل
-
-        //        // احذف الروابط أولًا
-        //        if (book.Book_Authors.Any())
+        //        var _authorsCount = book.Book_Authors.Count;
+        //        if (_authorsCount > 0)
         //        {
-        //            // الأفضل تستخدم Remove على الـ repo للروابط
+        //            var linkRepo = _unitOfWork.GetRepoartory<Book_Authors>();
         //            foreach (var link in book.Book_Authors.ToList())
         //                linkRepo.Remove(link);
         //        }
 
-        //        // بعد تنظيف الروابط، احذف الكتاب
         //        bookRepo.Remove(book);
-
         //        return await _unitOfWork.SaveChangesAsync() > 0;
         //    }
         //    catch (DbUpdateException ex)
         //    {
-        //        // في حالة وجود علاقات أخرى تمنع الحذف (مثلاً Borrow بـ Restrict)
-        //        // TODO: log ex
         //        Console.WriteLine(ex.Message);
         //        return false;
         //    }
@@ -204,26 +282,24 @@ namespace Service_Implemention.Service
         //    }
         //}
 
-
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<Result<int>> DeleteAsync(int id)
         {
             try
             {
                 var bookRepo = _unitOfWork.GetRepoartory<Book>();
                 var book = await bookRepo.GetByIdAsync(id);
-                if (book is null) return false;
 
-                // اجبار Lazy Loading لتحميل المجموعات
+                if (book is null)
+                    return Result<int>.Fail("The book does not exist", ErrorCodes.BookNotFound);
+
                 book.Borrows ??= new HashSet<Borrow>();
-                var _borrowsCount = book.Borrows.Count;
+                var borrowsCount = book.Borrows.Count;
 
-                if (_borrowsCount > 0)
-                    throw new InvalidOperationException("Cannot delete a book that has borrow records.");
+                if (borrowsCount > 0)
+                    return Result<int>.Fail("A book with loan records cannot be deleted", ErrorCodes.BorrowExists, book.Id);
 
-                // نفس الشيء لعلاقة Book_Authors إن لم يكن لديك Cascade
                 book.Book_Authors ??= new HashSet<Book_Authors>();
-                var _authorsCount = book.Book_Authors.Count;
-                if (_authorsCount > 0)
+                if (book.Book_Authors.Count > 0)
                 {
                     var linkRepo = _unitOfWork.GetRepoartory<Book_Authors>();
                     foreach (var link in book.Book_Authors.ToList())
@@ -231,16 +307,24 @@ namespace Service_Implemention.Service
                 }
 
                 bookRepo.Remove(book);
-                return await _unitOfWork.SaveChangesAsync() > 0;
+
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save data", ErrorCodes.DbSaveFailed, book.Id);
+
+                return Result<int>.Ok(book.Id, "The book has been successfully deleted");
             }
-            catch (DbUpdateException ex)
+            catch (OperationCanceledException)
             {
-                Console.WriteLine(ex.Message);
-                return false;
+                return Result<int>.Fail("The operation has been cancelled", ErrorCodes.Canceled);
             }
-            catch
+            catch (DbUpdateException)
             {
-                return false;
+                return Result<int>.Fail("The book could not be deleted due to database limitations.", ErrorCodes.DbUpdateError);
+            }
+            catch (Exception)
+            {
+                return Result<int>.Fail("An unexpected error occurred", ErrorCodes.Unexpected);
             }
         }
 

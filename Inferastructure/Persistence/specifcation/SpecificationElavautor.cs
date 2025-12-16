@@ -24,11 +24,7 @@ namespace Persistence.specifcation
                 Query = Query.OrderByDescending(specification.OrderByDesc);
             }
 
-            //if (specification.IncudeExpression is not null && specification.IncudeExpression.Count() > 0)
-            //{
-            //    Query = specification.IncudeExpression.Aggregate(Query, (Current, IncludeExp) => Current.Include(IncludeExp));
-
-            //}
+          
             if (specification.IsPaginate)
             {
                 Query = Query.Skip(specification.Skip).Take(specification.Take);

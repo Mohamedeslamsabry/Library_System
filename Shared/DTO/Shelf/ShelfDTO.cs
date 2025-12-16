@@ -13,7 +13,7 @@
     public sealed class BookBriefDto
     {
         public int Id { get; init; }
-        public string Title { get; init; } = default!;     // بدّل اسم الخاصية حسب كيان Book عندك
+        public string Title { get; init; } = default!;     
     }
 
     public sealed class FloorBriefDto

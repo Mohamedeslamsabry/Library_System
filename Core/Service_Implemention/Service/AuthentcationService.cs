@@ -1,4 +1,5 @@
-﻿using Domain_Layer.Models.Identity;
+﻿using Domain_Layer.Exceptions;
+using Domain_Layer.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -18,13 +19,8 @@ namespace Service_Implemention.Service
         #region Login
         public async Task<UserReturnDTO> LoginAsync(LoginDTO loginDTO)
         {
-            var User = await _userManager.FindByEmailAsync(loginDTO.Email);
-
-            if (User == null)
-            {
-                return new UserReturnDTO();
-            }
-            //?? throw new UserNotFoundException(loginDTO.Email);
+            var User = await _userManager.FindByEmailAsync(loginDTO.Email) 
+                ?? throw new UserrNotFoundException(loginDTO.Email);           
 
             //Check passowrd
             var IsPassowrdValid = await _userManager.CheckPasswordAsync(User, loginDTO.Password);
@@ -40,8 +36,7 @@ namespace Service_Implemention.Service
             }
             else
             {
-                throw new Exception();
-                //throw new UnauthorizedException();
+                throw new UnauthorizedException();
             }
 
         }
@@ -75,8 +70,7 @@ namespace Service_Implemention.Service
             else // Occures ModelState error Example Passowrd not Correct Microsoft configraution
             {
                 var Errors = Result.Errors.Select(E => E.Description).ToList();
-                throw new Exception();
-                //throw new BadRequestException(Errors);
+                throw new BadRequestException(Errors);
             }
         }
 
@@ -130,14 +124,12 @@ namespace Service_Implemention.Service
             user.EmailConfirmed = true;
             await _userManager.UpdateAsync(user);
 
-            // لأمان الخصوصية: نُرجع true دومًا لو العملية مضت بدون استثناءات (حتى لو مفيش مستخدم)
             if (user is null || !(await _userManager.IsEmailConfirmedAsync(user)))
                 return true;
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var tokenEncoded = HttpUtility.UrlEncode(token);
 
-            // عنوان صفحة إعادة الضبط في الـ Frontend
             var frontendResetUrl = _config["Frontend:ResetPasswordUrl"]
                                    ?? "https://your-frontend/reset-password";
             var resetUrl = $"{frontendResetUrl}?email={HttpUtility.UrlEncode(model.Email)}&token={tokenEncoded}";
@@ -169,7 +161,6 @@ namespace Service_Implemention.Service
             var result = await _userManager.ResetPasswordAsync(user, decodedToken, model.NewPassword);
             if (!result.Succeeded) return false;
 
-            // بما إنك شغال JWT: إبطل التوكينات القديمة
             await _userManager.UpdateSecurityStampAsync(user);
             return true;
         }
@@ -178,27 +169,23 @@ namespace Service_Implemention.Service
         #region ChangePasswordAsync
         public async Task<bool> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model, CancellationToken ct = default)
         {
-            // فحص مدخلات أساسي
             if (string.IsNullOrWhiteSpace(model.CurrentPassword) ||
                 string.IsNullOrWhiteSpace(model.NewPassword))
 
                 return false;
 
-            if (model.NewPassword.Length < 8) // عدّل حسب سياسة الباسورد عندك
+            if (model.NewPassword.Length < 8) 
                 return false;
 
 
-            // على المستخدم الحالي من الـ Claims
             var user = await _userManager.GetUserAsync(userPrincipal);
             if (user is null) return false;
 
-            // نفّذ التغيير
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
 
 
             if (!result.Succeeded) return false;
 
-            // بما إنك شغال JWT: إبطل أي JWT قديمة بتحديث الـ SecurityStamp
             await _userManager.UpdateSecurityStampAsync(user);
 
             return true;
@@ -220,11 +207,8 @@ namespace Service_Implemention.Service
         #region GetCurrentUserAsync
         public async Task<UserReturnDTO> GetCurrentUserAsync(string email)
         {
-            var User = await _userManager.FindByEmailAsync(email); /*?? throw new UserNotFoundException(email);*/
-            if (User is null)
-            {
-                return new UserReturnDTO();
-            }
+            var User = await _userManager.FindByEmailAsync(email) ?? throw new UserrNotFoundException(email);
+
             return new UserReturnDTO()
             {
                 FirstName = User.FirstName,
@@ -242,7 +226,6 @@ namespace Service_Implemention.Service
             var user = await _userManager.GetUserAsync(userPrincipal);
             if (user is null) return false;
 
-            // يحدّث SecurityStamp → يبطل كل الـ JWTs القديمة فورًا
             await _userManager.UpdateSecurityStampAsync(user);
             return true;
         }
@@ -287,11 +270,10 @@ namespace Service_Implemention.Service
             }
             catch (SmtpException ex)
             {
-                // شوف السبب الحقيقي (ساعات Gmail بيرفض المصادقة أو SSL)
                 Console.WriteLine($"SMTP ERROR: {ex.StatusCode} - {ex.Message}");
                 if (ex.InnerException != null)
                     Console.WriteLine($"INNER: {ex.InnerException.Message}");
-                throw; // أثناء الاختبار خلّيها ترمي علشان تشوف الخطأ
+                throw; 
             }
             catch (Exception ex)
             {
@@ -300,31 +282,7 @@ namespace Service_Implemention.Service
             }
         }
 
-        //public SmtpEmailSender(IConfiguration config)
-        //{
-        //    _from = config["Smtp:From"] ?? "no-reply@yourdomain.com";
-        //    _client = new SmtpClient(config["Smtp:Host"]!)
-        //    {
-        //        Port = int.Parse(config["Smtp:Port"] ?? "587"),
-        //        EnableSsl = true,
-        //        Credentials = new NetworkCredential(
-        //            config["Smtp:User"],
-        //            config["Smtp:Pass"] // App Password لو جيميل
-        //        )
-        //    };
-        //}
-
-        //public async Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
-        //{
-        //    using var msg = new MailMessage(_from, to)
-        //    {
-        //        Subject = subject,
-        //        Body = htmlBody,
-        //        IsBodyHtml = true
-        //    };
-        //    await _client.SendMailAsync(msg);
-        //}
-
+      
     }
 
 
@@ -336,7 +294,6 @@ namespace Service_Implemention.Service
         public Task RevokeAsync(string jti, DateTime expiresAt)
         {
             _revoked.Add(jti);
-            // ممكن تعمل تنظيف دوري بعد expiresAt لو حابب
             return Task.CompletedTask;
         }
 

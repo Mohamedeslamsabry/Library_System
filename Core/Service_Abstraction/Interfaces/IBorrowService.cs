@@ -1,5 +1,6 @@
 ﻿using Shared;
 using Shared.DTO.Borrow;
+using Shared.Error;
 
 namespace Service_Abstraction.Interfaces
 {
@@ -14,18 +15,18 @@ namespace Service_Abstraction.Interfaces
         #endregion
 
         #region CreateAsync
-        Task<bool> CreateAsync(CreateOrUpdateBorrowDTO createBorrow);
+        Task<Result<int>> CreateAsync(CreateOrUpdateBorrowDTO createBorrow);
         #endregion
 
         #region UpdateAsync
 
-        Task<bool> UpdateByKeyAsync(int userId, int bookId, DateTime dateBorrow, CreateOrUpdateBorrowDTO updateBorrow);
+        Task<Result<int>> UpdateByKeyAsync(int userId, int bookId, DateTime dateBorrow, CreateOrUpdateBorrowDTO updateBorrow);
 
         #endregion
 
         #region DeleteAsync
 
-        Task<bool> DeleteByKeyAsync(int userId, int bookId, DateTime dateBorrow);
+        Task<Result<int>> DeleteByKeyAsync(int userId, int bookId, DateTime dateBorrow);
         #endregion
     }
 }

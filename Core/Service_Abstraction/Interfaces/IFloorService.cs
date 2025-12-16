@@ -1,4 +1,5 @@
 ﻿using Shared.DTO.Floor;
+using Shared.Error;
 
 namespace Service_Abstraction.Interfaces
 {
@@ -13,15 +14,15 @@ namespace Service_Abstraction.Interfaces
         #endregion
 
         #region CreateAsync
-        Task<bool> CreateAsync(CreateOrUpdateFloorDTO createFloor);
+        Task<Result<int>> CreateAsync(CreateOrUpdateFloorDTO createFloor);
         #endregion
 
         #region UpdateAsync
-        Task<bool> UpdateAsync(int FloorNumber, CreateOrUpdateFloorDTO updateFloorDTO);
+        Task<Result<int>> UpdateAsync(int FloorNumber, CreateOrUpdateFloorDTO updateFloorDTO);
         #endregion
 
         #region DeleteAsync
-        Task<bool> DeleteAsync(int FloorNumber);
+        Task<Result<int>> DeleteAsync(int FloorNumber);
         #endregion
     }
 }

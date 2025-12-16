@@ -3,9 +3,10 @@ using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Exceptions;
 using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
-using Domain_Layer.Models.Shelf_Models;
+using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
 using Shared.DTO.Floor;
+using Shared.Error;
 
 namespace Service_Implemention.Service
 {
@@ -36,104 +37,251 @@ namespace Service_Implemention.Service
         #endregion
 
         #region Create Floor
-        public async Task<bool> CreateAsync(CreateOrUpdateFloorDTO createFloor)
+        //public async Task<bool> CreateAsync(CreateOrUpdateFloorDTO createFloor)
+        //{
+        //    try
+        //    {
+        //        var Floor = _mapper.Map<CreateOrUpdateFloorDTO, Floors>(createFloor);
+
+        //        // شرط التحقق من وجود المدير
+        //        if (createFloor.ManagerId.HasValue)
+        //        {
+        //            var managerExists = await _UnitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createFloor.ManagerId.Value);
+        //            if (!managerExists)
+        //                throw new ArgumentException($"This Employee By ({createFloor.ManagerId}) Not Found.", nameof(createFloor.ManagerId));
+        //        }
+
+        //        await _UnitOfWork.GetRepoartory<Floors>().AddAsync(Floor);
+        //        var isCreated = await _UnitOfWork.SaveChangesAsync() > 0;
+        //        if (!isCreated)
+        //        {
+        //            return false;
+        //        }
+        //        else
+        //        {
+        //            return isCreated;
+        //        }
+
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        return false;
+        //    }
+        //}
+
+        public async Task<Result<int>> CreateAsync(CreateOrUpdateFloorDTO createFloor)
         {
+            if (createFloor is null)
+                return Result<int>.Fail("Request body is missing.", ErrorCodes.ValidationNull);
+
             try
             {
-                var Floor = _mapper.Map<CreateOrUpdateFloorDTO, Floors>(createFloor);
-
-                // شرط التحقق من وجود المدير
                 if (createFloor.ManagerId.HasValue)
                 {
-                    var managerExists = await _UnitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createFloor.ManagerId.Value);
+                    var managerExists = await _UnitOfWork.GetRepoartory<Employee>()
+                    .AnyAsync(e => e.Id == createFloor.ManagerId.Value);
+
                     if (!managerExists)
-                        throw new ArgumentException($"This Employee By ({createFloor.ManagerId}) Not Found.", nameof(createFloor.ManagerId));
+                        return Result<int>.Fail("Manager employee not found.", ErrorCodes.ManagerNotFound);
                 }
 
-                await _UnitOfWork.GetRepoartory<Floors>().AddAsync(Floor);
-                var isCreated = await _UnitOfWork.SaveChangesAsync() > 0;
-                if (!isCreated)
-                {
-                    return false;
-                }
-                else
-                {
-                    return isCreated;
-                }
+                var floor = _mapper.Map<CreateOrUpdateFloorDTO, Floors>(createFloor);
 
+                await _UnitOfWork.GetRepoartory<Floors>().AddAsync(floor);
+                var saved = await _UnitOfWork.SaveChangesAsync() > 0;
+
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed);
+
+                return Result<int>.Ok(floor.Id, "Floor created successfully.");
+            }
+            catch (OperationCanceledException)
+            {
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
+            }
+            catch (AutoMapperMappingException)
+            {
+                return Result<int>.Fail("Data mapping failed.", ErrorCodes.MappingError);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("Database update failed during create.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {
-
-                return false;
+                return Result<int>.Fail("Unexpected error occurred.", ErrorCodes.Unexpected);
             }
         }
 
         #endregion
 
         #region Update Floor
-        public async Task<bool> UpdateAsync(int FloorNumber, CreateOrUpdateFloorDTO updateFloorDTO)
+        //public async Task<bool> UpdateAsync(int FloorNumber, CreateOrUpdateFloorDTO updateFloorDTO)
+        //{
+        //    try
+        //    {
+        //        var Repo = _UnitOfWork.GetRepoartory<Floors>();
+        //        var Floor = await Repo.GetByIdAsync(FloorNumber);
+        //        if (Floor is null) { return false; }
+
+        //        // شرط التحقق من وجود المدير
+        //        if (updateFloorDTO.ManagerId.HasValue)
+        //        {
+        //            var managerExists = await _UnitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateFloorDTO.ManagerId.Value);
+        //            if (!managerExists)
+        //                throw new ArgumentException($"This Employee By ({updateFloorDTO.ManagerId}) Not Found.", nameof(updateFloorDTO.ManagerId));
+        //        }
+
+        //        _mapper.Map(updateFloorDTO, Floor);
+        //        Repo.Update(Floor);
+        //        return await _UnitOfWork.SaveChangesAsync() > 0;
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        return false;
+        //    }
+        //}
+
+        public async Task<Result<int>> UpdateAsync(int floorNumber, CreateOrUpdateFloorDTO updateFloorDTO)
         {
+            if (updateFloorDTO is null)
+                return Result<int>.Fail("Request body is missing.", ErrorCodes.ValidationNull);
+
             try
             {
-                var Repo = _UnitOfWork.GetRepoartory<Floors>();
-                var Floor = await Repo.GetByIdAsync(FloorNumber);
-                if (Floor is null) { return false; }
+                var repo = _UnitOfWork.GetRepoartory<Floors>();
+                var floor = await repo.GetByIdAsync(floorNumber);
 
-                // شرط التحقق من وجود المدير
+                if (floor is null)
+                    return Result<int>.Fail("Floor not found.", ErrorCodes.FloorNotFound);
+
                 if (updateFloorDTO.ManagerId.HasValue)
                 {
-                    var managerExists = await _UnitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateFloorDTO.ManagerId.Value);
+                    var managerExists = await _UnitOfWork.GetRepoartory<Employee>()
+                        .AnyAsync(e => e.Id == updateFloorDTO.ManagerId.Value);
+
                     if (!managerExists)
-                        throw new ArgumentException($"This Employee By ({updateFloorDTO.ManagerId}) Not Found.", nameof(updateFloorDTO.ManagerId));
+                        return Result<int>.Fail("Manager employee not found.", ErrorCodes.ManagerNotFound);
                 }
 
-                _mapper.Map(updateFloorDTO, Floor);
-                Repo.Update(Floor);
-                return await _UnitOfWork.SaveChangesAsync() > 0;
+                _mapper.Map(updateFloorDTO, floor);
+                repo.Update(floor);
+
+                var saved = await _UnitOfWork.SaveChangesAsync() > 0;
+
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed);
+
+                return Result<int>.Ok(floor.Id, "Floor updated successfully.");
+            }
+            catch (OperationCanceledException)
+            {
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Result<int>.Fail("Concurrency conflict while updating.", ErrorCodes.ConcurrencyError);
+            }
+            catch (AutoMapperMappingException)
+            {
+                return Result<int>.Fail("Data mapping failed.", ErrorCodes.MappingError);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("Database update failed during update.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {
-
-                return false;
+                return Result<int>.Fail("Unexpected error occurred.", ErrorCodes.Unexpected);
             }
         }
 
         #endregion
 
         #region Delete Floor
-        public async Task<bool> DeleteAsync(int FloorNumber)
+
+        //public async Task<bool> DeleteAsync(int FloorNumber)
+        //{
+        //    try
+        //    {
+        //        var Floor = await _UnitOfWork.GetRepoartory<Floors>().GetByIdAsync(FloorNumber);
+        //        if (Floor is null) { return false; }
+
+        //        //Bussniess Role Employee
+        //        if (Floor.employeesWork.Any())
+        //        {
+        //            foreach (var Employee in Floor.employeesWork)
+        //            {
+        //                Employee.FloorsNumber = null;
+        //            }
+        //        }
+
+        //        if (Floor.Shelfs.Any())
+        //        {
+        //            foreach (var Shelf in Floor.Shelfs)
+        //            {
+        //                Shelf.FloorNumber = null;
+        //            }
+        //        }
+
+        //        _UnitOfWork.GetRepoartory<Floors>().Remove(Floor);
+        //        var IsRemoved = await _UnitOfWork.SaveChangesAsync() > 0;
+        //        return IsRemoved;
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        return false;
+        //    }
+        //}
+
+
+        public async Task<Result<int>> DeleteAsync(int floorNumber)
         {
             try
             {
-                var Floor = await _UnitOfWork.GetRepoartory<Floors>().GetByIdAsync(FloorNumber);
-                if (Floor is null) { return false; }
+                var floorRepo = _UnitOfWork.GetRepoartory<Floors>();
+                var floor = await floorRepo.GetByIdAsync(floorNumber);
 
-                //Bussniess Role Employee
-                if (Floor.employeesWork.Any())
+                if (floor is null)
+                    return Result<int>.Fail("Floor not found.", ErrorCodes.FloorNotFound);
+
+                // Unlink employees (set FK to null)
+                if (floor.employeesWork?.Any() == true)
                 {
-                    foreach (var Employee in Floor.employeesWork)
-                    {
-                        Employee.FloorsNumber = null;
-                    }
+                    foreach (var employee in floor.employeesWork)
+                        employee.FloorsNumber = null;
                 }
 
-                if (Floor.Shelfs.Any())
+                // Unlink shelves (set FK to null)
+                if (floor.Shelfs?.Any() == true)
                 {
-                    foreach (var Shelf in Floor.Shelfs)
-                    {
-                        Shelf.FloorNumber = null;
-                    }
+                    foreach (var shelf in floor.Shelfs)
+                        shelf.FloorNumber = null;
                 }
 
-                _UnitOfWork.GetRepoartory<Floors>().Remove(Floor);
-                var IsRemoved = await _UnitOfWork.SaveChangesAsync() > 0;
-                return IsRemoved;
+                floorRepo.Remove(floor);
+
+                var saved = await _UnitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed, floor.Id);
+
+
+                return Result<int>.Ok(floor.Id, "Floor deleted successfully.");
+            }
+            catch (OperationCanceledException)
+            {
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("Database update failed during delete.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {
-
-                return false;
+                return Result<int>.Fail("Unexpected error occurred.", ErrorCodes.Unexpected);
             }
         }
         #endregion

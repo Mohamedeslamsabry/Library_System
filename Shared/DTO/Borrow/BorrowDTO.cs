@@ -3,7 +3,6 @@
     public class BorrowDTO
     {
 
-        //public int Id { get; set; }
         public DateTime DateBorrow { get; set; }
         public DateTime DueDate { get; set; }
         public int Amount { get; set; }

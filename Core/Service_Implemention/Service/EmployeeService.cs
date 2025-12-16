@@ -8,6 +8,7 @@ using Service_Abstraction.Interfaces;
 using Service_Implemention.Specification;
 using Shared;
 using Shared.DTO.Employee;
+using Shared.Error;
 
 namespace Service_Implemention.Service
 {
@@ -52,7 +53,6 @@ namespace Service_Implemention.Service
         {
             try
             {
-                // ✅ فحص التكرار بكفاءة
                 var repo = _unitOfWork.GetRepoartory<Employee>();
 
                 var phoneExists = await repo.AnyAsync(x => x.PhoneNumber == createEmployee.PhoneNumber);
@@ -79,7 +79,6 @@ namespace Service_Implemention.Service
                     };
                 }
 
-                // ✅ تحقق من وجود المدير لو تم إدخاله
                 if (createEmployee.SupervisorId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == createEmployee.SupervisorId))
                 {
@@ -88,11 +87,10 @@ namespace Service_Implemention.Service
                         Success = false,
                         ErrorCode = "SupervisorNotFound",
                         ErrorField = "SupervisorId",
-                        Message = "المشرف غير موجود."
+                        Message = "Supervisor NotFound."
                     };
                 }
 
-                // ✅ تحقق من وجود الدور/الدوران (الأدوار/الأدوار—هنا Floors)
                 if (createEmployee.floorsNumberWork.HasValue &&
                     !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == createEmployee.floorsNumberWork))
                 {
@@ -116,7 +114,7 @@ namespace Service_Implemention.Service
                     {
                         Success = false,
                         ErrorCode = "SaveFailed",
-                        Message = "حدث خطأ أثناء الحفظ."
+                        Message = "An error occurred during saving.."
                     };
                 }
 
@@ -126,10 +124,8 @@ namespace Service_Implemention.Service
                     Message = "Succesfully."
                 };
             }
-            catch (DbUpdateException ex) // في حالة Unique Index في DB
+            catch (DbUpdateException) 
             {
-                // حاول تمييز الحقل من رسالة الـ DB لو أمكن
-                Console.WriteLine(ex.Message);
                 return new CreateEmployeeResult
                 {
                     Success = false,
@@ -185,7 +181,6 @@ namespace Service_Implemention.Service
         //    }
         //}
 
-
         public async Task<UpdateEmployeeResult> UpdateAsync(int id, CreateOrUpdateEmployeeDTO updateEmployee)
         {
             try
@@ -204,7 +199,6 @@ namespace Service_Implemention.Service
                 }
 
 
-                // ✅ تحقّق من وجود المشرف (إن تم إدخاله)
                 if (updateEmployee.SupervisorId.HasValue &&
                     !await _unitOfWork.GetRepoartory<Employee>().AnyAsync(e => e.Id == updateEmployee.SupervisorId))
                 {
@@ -213,11 +207,10 @@ namespace Service_Implemention.Service
                         Success = false,
                         ErrorCode = "SupervisorNotFound",
                         ErrorField = "SupervisorId",
-                        Message = "المشرف غير موجود."
+                        Message = "Supervisor NotFound."
                     };
                 }
 
-                // ✅ تحقّق من وجود الدور/الطابق (إن تم إدخاله)
                 if (updateEmployee.floorsNumberWork.HasValue &&
                     !await _unitOfWork.GetRepoartory<Floors>().AnyAsync(f => f.Id == updateEmployee.floorsNumberWork))
                 {
@@ -226,11 +219,10 @@ namespace Service_Implemention.Service
                         Success = false,
                         ErrorCode = "FloorNotFound",
                         ErrorField = "floorsNumberWork",
-                        Message = "الطابق غير موجود."
+                        Message = "Floor NotFound."
                     };
                 }
 
-                // ✅ فحص تكرار الهاتف/الإيميل فقط لو اتغيّروا فعلاً
                 if (!string.Equals(employee.PhoneNumber, updateEmployee.PhoneNumber, StringComparison.OrdinalIgnoreCase))
                 {
                     var phoneExists = await repo.AnyAsync(x => x.PhoneNumber == updateEmployee.PhoneNumber && x.Id != id);
@@ -261,10 +253,7 @@ namespace Service_Implemention.Service
                     }
                 }
 
-                
-
                 _mapper.Map(updateEmployee, employee);
-
 
                 repo.Update(employee);
 
@@ -317,61 +306,120 @@ namespace Service_Implemention.Service
         }
         #endregion
 
-            #region DeleteAsync
-        public async Task<bool> DeleteAsync(int id)
+        #region DeleteAsync
+        //public async Task<bool> DeleteAsync(int id)
+        //{
+        //    try
+        //    {
+        //        var Employee = await _unitOfWork.GetRepoartory<Employee>().GetByIdAsync(id);
+        //        if (Employee is null) { return false; }
+
+        //        // ✅ Business Rule: Subordinates
+        //        if (Employee.Subordinates.Any())
+        //        {
+        //            foreach (var employee in Employee.Subordinates)
+        //            {
+        //                employee.SupervisorId = null;
+        //            }
+        //        }
+
+        //        // ✅ Business Rule: Users
+        //        if (Employee.Users.Any())
+        //        {
+        //            foreach (var User in Employee.Users)
+        //            {
+        //                User.EmployeeId = null;
+        //            }
+        //        }
+
+        //        //// ✅ Business Rule: Floor
+
+        //        if (Employee.FloorsMange is not null)
+        //        {
+        //            if (Employee.FloorsMange.EmployeeMangeId != null)
+        //            {
+        //                if (Employee.FloorsMange!.EmployeeMangeId == Employee.Id)
+        //                {
+        //                    Employee.FloorsMange.EmployeeMangeId = null;
+        //                }
+        //            }
+        //        }
+
+        //        // ✅ Business Rule: Borrows
+        //        if (Employee.Borrows.Any())
+        //        {
+        //            foreach (var emp in Employee.Borrows)
+        //            {
+        //                emp.EmployeeId = null;
+        //            }
+        //        }
+        //        _unitOfWork.GetRepoartory<Employee>().Remove(Employee);
+        //        var IsRemoved = await _unitOfWork.SaveChangesAsync() > 0;
+        //        return IsRemoved;
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        return false;
+        //    }
+        //}
+
+        public async Task<Result<int>> DeleteAsync(int id)
         {
             try
             {
-                var Employee = await _unitOfWork.GetRepoartory<Employee>().GetByIdAsync(id);
-                if (Employee is null) { return false; }
+                var employeeRepo = _unitOfWork.GetRepoartory<Employee>();
+                var employee = await employeeRepo.GetByIdAsync(id);
 
-                // ✅ Business Rule: Subordinates
-                if (Employee.Subordinates.Any())
+                if (employee is null)
+                    return Result<int>.Fail("Employee not found.", ErrorCodes.EmployeeNotFound);
+
+                if (employee.Subordinates?.Any() == true)
                 {
-                    foreach (var employee in Employee.Subordinates)
+                    foreach (var sub in employee.Subordinates)
+                        sub.SupervisorId = null;
+                }
+
+                if (employee.Users?.Any() == true)
+                {
+                    foreach (var user in employee.Users)
+                        user.EmployeeId = null;
+                }
+
+                if (employee.FloorsMange is not null)
+                {
+                    if (employee.FloorsMange.EmployeeMangeId != null &&
+                        employee.FloorsMange.EmployeeMangeId == employee.Id)
                     {
-                        employee.SupervisorId = null;
+                        employee.FloorsMange.EmployeeMangeId = null;
                     }
                 }
 
-                // ✅ Business Rule: Users
-                if (Employee.Users.Any())
+                if (employee.Borrows?.Any() == true)
                 {
-                    foreach (var User in Employee.Users)
-                    {
-                        User.EmployeeId = null;
-                    }
+                    foreach (var borrow in employee.Borrows)
+                        borrow.EmployeeId = null;
                 }
 
-                //// ✅ Business Rule: Floor
+                employeeRepo.Remove(employee);
 
-                if(Employee.FloorsMange is not null)
-                {
-                    if (Employee.FloorsMange.EmployeeMangeId != null)
-                    {
-                        if (Employee.FloorsMange!.EmployeeMangeId == Employee.Id)
-                        {
-                            Employee.FloorsMange.EmployeeMangeId = null;
-                        }
-                    }
-                }
+                var saved = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!saved)
+                    return Result<int>.Fail("Failed to save changes.", ErrorCodes.DbSaveFailed, id);
 
-                // ✅ Business Rule: Borrows
-                if (Employee.Borrows.Any())
-                {
-                    foreach (var emp in Employee.Borrows)
-                    {
-                        emp.EmployeeId = null;
-                    }
-                }
-                _unitOfWork.GetRepoartory<Employee>().Remove(Employee);
-                    var IsRemoved = await _unitOfWork.SaveChangesAsync() > 0;
-                    return IsRemoved;
+                return Result<int>.Ok(id, "Employee deleted successfully.");
+            }
+            catch (OperationCanceledException)
+            {
+                return Result<int>.Fail("Operation was canceled.", ErrorCodes.Canceled);
+            }
+            catch (DbUpdateException)
+            {
+                return Result<int>.Fail("Database update failed during delete.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {
-
-                return false;
+                return Result<int>.Fail("Unexpected error occurred.", ErrorCodes.Unexpected);
             }
         }
         #endregion

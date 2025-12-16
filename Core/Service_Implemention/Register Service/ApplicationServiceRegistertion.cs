@@ -10,7 +10,6 @@ namespace Service_Implemention.Register_Service
         public static IServiceCollection AddApplictionService(this IServiceCollection Services)
         {
             Services.AddScoped<IEmployeeService, EmployeeService>();
-
             Services.AddScoped<IFloorService, FloorService>();
             Services.AddScoped<IShelfService, ShelfService>();
             Services.AddScoped<IPublisherService, PublisherService>();

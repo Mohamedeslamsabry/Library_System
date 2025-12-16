@@ -54,5 +54,4 @@ namespace Service_Abstraction.Interfaces
         Task<bool> IsRevokedAsync(string jti);
     }
 
-
 }
