@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain_Layer.Contract.UnitOfWork;
 using Domain_Layer.Exceptions;
+using Domain_Layer.Models.Authors_Models;
 using Domain_Layer.Models.Puplishers_Models;
 using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
@@ -80,8 +81,13 @@ namespace Service_Implemention.Service
 
             try
             {
-                var publisher = _mapper.Map<CreateOrUpdatePublisherDTO, Puplishers>(createPublisher);
+                var PublisherRepo = _UnitOfWork.GetRepoartory<Puplishers>();
 
+                var publisher = _mapper.Map<CreateOrUpdatePublisherDTO, Puplishers>(createPublisher);
+                var normalized = createPublisher.Publisher_Name.Trim().ToLower();
+                var exists = await PublisherRepo.AnyAsync(a => a.Publisher_Name.ToLower() == normalized);
+                if (exists)
+                    return Result<int>.Fail("The Publisher's name already exists.", ErrorCodes.PublisherNotFound);
                 await _UnitOfWork.GetRepoartory<Puplishers>().AddAsync(publisher);
 
                 var saved = await _UnitOfWork.SaveChangesAsync() > 0;
@@ -144,6 +150,14 @@ namespace Service_Implemention.Service
 
                 if (publisher is null)
                     return Result<int>.Fail("Publisher not found.", ErrorCodes.PublisherNotFound);
+
+                var normalized = updatePublisher.Publisher_Name.Trim().ToLower();
+                var exists = await _UnitOfWork.GetRepoartory<Puplishers>()
+                    .AnyAsync(a => a.Id != id && a.Publisher_Name.ToLower() == normalized);
+
+                if (exists)
+                    return Result<int>.Fail("The publisher's name already exists.", ErrorCodes.AuthorDuplicate);
+
 
                 _mapper.Map(updatePublisher, publisher);
                 repo.Update(publisher);
@@ -217,7 +231,6 @@ namespace Service_Implemention.Service
                 if (publisher is null)
                     return Result<int>.Fail("Publisher not found.", ErrorCodes.PublisherNotFound);
 
-                // Detach related books by nulling        // Detach related books by nulling FK (if lazy loading is enabled or navs are loaded)
                 if (publisher.Book?.Any() == true)
                 {
                     foreach (var book in publisher.Book)

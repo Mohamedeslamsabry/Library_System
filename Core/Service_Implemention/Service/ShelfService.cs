@@ -5,6 +5,9 @@ using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shelf_Models;
 using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
+using Service_Implemention.Specification;
+using Shared;
+using Shared.DTO.Floor;
 using Shared.DTO.Shelf;
 using Shared.Error;
 
@@ -13,17 +16,18 @@ namespace Service_Implemention.Service
     public class ShelfService(IUnitOfWork _UnitOfWork, IMapper _mapper) : IShelfService
     {
         #region GetAllAsync
-        public async Task<IEnumerable<ShelfDTO>> GetAllAsync()
+        public async Task<PaginatedResult<ShelfDTO>> GetAllAsync(ShelfQueryParamter shelfQuery)
         {
-            var Shelf = await _UnitOfWork.GetRepoartory<Shelf>().GetAllAsync();
-            if (Shelf is null)
-            {
-                return Enumerable.Empty<ShelfDTO>();
-            }
-            else
-            {
-                return _mapper.Map<IEnumerable<Shelf>, IEnumerable<ShelfDTO>>(Shelf);
-            }
+            var Specification = new ShelfSpecifcation(shelfQuery);
+            var Shelfs = await _UnitOfWork.GetRepoartory<Shelf>().GetAllAsync(Specification);
+            var ShelfDto = _mapper.Map<IEnumerable<Shelf>, IEnumerable<ShelfDTO>>(Shelfs);
+
+            #region Paggention
+            var spec = new ShelfSpecifcation(shelfQuery);
+            var TotalCount = await _UnitOfWork.GetRepoartory<Shelf>().CountAsync(spec);
+            #endregion
+
+            return new PaginatedResult<ShelfDTO>(TotalCount, Shelfs.Count(), shelfQuery.PageIndex, ShelfDto);
         }
 
         #endregion

@@ -1,4 +1,5 @@
-﻿using Shared.DTO.Floor;
+﻿using Shared;
+using Shared.DTO.Floor;
 using Shared.Error;
 
 namespace Service_Abstraction.Interfaces
@@ -6,7 +7,7 @@ namespace Service_Abstraction.Interfaces
     public interface IFloorService
     {
         #region GetAllAsync
-        Task<IEnumerable<FloorDTO>> GetAllAsync();
+        Task<PaginatedResult<FloorDTO>> GetAllAsync(FloorQueryParamter floorQuery);
         #endregion
 
         #region GetByIdAsync

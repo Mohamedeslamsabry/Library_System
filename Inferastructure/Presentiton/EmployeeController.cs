@@ -16,7 +16,7 @@ namespace Presentiton
         [HttpGet]
         [Cash]
         //https://localhost:7063/api/Employee
-        public async Task<ActionResult<IEnumerable<EmployeeDTO>>> GetAllEmployees([FromQuery] EmployeeQueryParamter employeeQuery)
+        public async Task<ActionResult<PaginatedResult<EmployeeDTO>>> GetAllEmployees([FromQuery] EmployeeQueryParamter employeeQuery)
         {
             var Employees = await _employeeService.GetAllAsync(employeeQuery);
             return Ok(Employees);

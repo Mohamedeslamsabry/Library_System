@@ -168,8 +168,7 @@ namespace Service_Implemention.Service
             }
             catch (DbUpdateException)
             {
-                // Likely FK constraint or other DB error
-                return Result<int>.Fail("Database update failed during create.", ErrorCodes.DbUpdateError);
+                return Result<int>.Fail("Database failed during create The error could be caused by the fact that this metadata already exists in the database.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {

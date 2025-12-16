@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
+using Shared;
 using Shared.DTO.Floor;
 
 namespace Presentiton
@@ -13,9 +14,9 @@ namespace Presentiton
 
         [HttpGet]
         [Cash]
-        public async Task<ActionResult<IEnumerable<FloorDTO>>> GetAllFloor()
+        public async Task<ActionResult<PaginatedResult<FloorDTO>>> GetAllFloor([FromQuery] FloorQueryParamter floorQuery)
         {
-            var Floors = await _floorService.GetAllAsync();
+            var Floors = await _floorService.GetAllAsync(floorQuery);
             return Ok(Floors);
         }
         #endregion  

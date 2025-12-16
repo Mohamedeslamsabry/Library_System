@@ -14,7 +14,7 @@ namespace Presentiton
         #region Get All User
         [HttpGet]
         [Cash]
-        public async Task<ActionResult<IEnumerable<UserDTO>>> GetAllUser([FromQuery] UserQueryParamter userQuery)
+        public async Task<ActionResult<PaginatedResult<UserDTO>>> GetAllUser([FromQuery] UserQueryParamter userQuery)
         {
             var Users = await userService.GetAllAsync(userQuery);
             return Ok(Users);

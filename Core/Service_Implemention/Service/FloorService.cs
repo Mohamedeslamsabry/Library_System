@@ -5,6 +5,9 @@ using Domain_Layer.Models.Employee_Models;
 using Domain_Layer.Models.Floors_Models;
 using Microsoft.EntityFrameworkCore;
 using Service_Abstraction.Interfaces;
+using Service_Implemention.Specification;
+using Shared;
+using Shared.DTO.Employee;
 using Shared.DTO.Floor;
 using Shared.Error;
 
@@ -13,17 +16,18 @@ namespace Service_Implemention.Service
     public class FloorService(IUnitOfWork _UnitOfWork, IMapper _mapper) : IFloorService
     {
         #region GetAllAsync
-        public async Task<IEnumerable<FloorDTO>> GetAllAsync()
+        public async Task<PaginatedResult<FloorDTO>> GetAllAsync(FloorQueryParamter floorQuery)
         {
-            var Floors = await _UnitOfWork.GetRepoartory<Floors>().GetAllAsync();
-            if (Floors is null)
-            {
-                return Enumerable.Empty<FloorDTO>();
-            }
-            else
-            {
-                return _mapper.Map<IEnumerable<Floors>, IEnumerable<FloorDTO>>(Floors);
-            }
+            var Specification = new FloorSpecifcation(floorQuery);
+            var Floors = await _UnitOfWork.GetRepoartory<Floors>().GetAllAsync(Specification);
+            var FloorDto = _mapper.Map<IEnumerable<Floors>, IEnumerable<FloorDTO>>(Floors);
+
+            #region Paggention
+            var spec = new FloorSpecifcation(floorQuery);
+            var TotalCount = await _UnitOfWork.GetRepoartory<Floors>().CountAsync(spec);
+            #endregion
+
+            return new PaginatedResult<FloorDTO>(TotalCount, Floors.Count(), floorQuery.PageIndex, FloorDto);
         }
 
         #endregion
@@ -106,7 +110,7 @@ namespace Service_Implemention.Service
             }
             catch (DbUpdateException)
             {
-                return Result<int>.Fail("Database update failed during create.", ErrorCodes.DbUpdateError);
+                return Result<int>.Fail("Database update failed during create This could be because the manager of this floor is the same manager as another floor.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {
@@ -190,7 +194,7 @@ namespace Service_Implemention.Service
             }
             catch (DbUpdateException)
             {
-                return Result<int>.Fail("Database update failed during update.", ErrorCodes.DbUpdateError);
+                return Result<int>.Fail("Database update failed during update This could be because the manager of this floor is the same manager as another floor.", ErrorCodes.DbUpdateError);
             }
             catch (Exception)
             {

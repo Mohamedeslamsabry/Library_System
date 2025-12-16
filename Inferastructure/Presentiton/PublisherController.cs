@@ -13,7 +13,7 @@ namespace Presentiton
         #region Get All Publisher
         [HttpGet]
         [Cash]
-        public async Task<ActionResult<IEnumerable<PublisherDTO>>> GetAllPublisher([FromQuery] PublisherQueryParamter publisherQuery)
+        public async Task<ActionResult<PaginatedResult<PublisherDTO>>> GetAllPublisher([FromQuery] PublisherQueryParamter publisherQuery)
         {
             var Publisher = await _publisherService.GetAllAsync(publisherQuery);
             return Ok(Publisher);

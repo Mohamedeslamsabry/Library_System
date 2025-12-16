@@ -1,4 +1,5 @@
-﻿using Shared.DTO.Shelf;
+﻿using Shared;
+using Shared.DTO.Shelf;
 using Shared.Error;
 
 namespace Service_Abstraction.Interfaces
@@ -6,7 +7,7 @@ namespace Service_Abstraction.Interfaces
     public interface IShelfService
     {
         #region GetAllAsync
-        Task<IEnumerable<ShelfDTO>> GetAllAsync();
+        Task<PaginatedResult<ShelfDTO>> GetAllAsync(ShelfQueryParamter shelfQuery);
         #endregion
 
         #region GetByIdAsync
