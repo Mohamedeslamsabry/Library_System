@@ -6,7 +6,6 @@ namespace Domain_Layer.Contract.specfication
     public interface ISpecification<TEntity> where TEntity : BaseEntity
     {
         Expression<Func<TEntity, bool>> Criteria { get; }
-        //List<Expression<Func<TEntity, object>>> IncudeExpression { get; }
 
         #region OrderBy
         Expression<Func<TEntity, object>> OrderBy { get; }

@@ -15,7 +15,6 @@ namespace Service_Implemention.Specification
 
         public Expression<Func<TEntity, bool>> Criteria { get; private set; }
 
-        //public List<Expression<Func<TEntity, object>>> IncudeExpression { get; } = [];
 
 
         #region Set Include

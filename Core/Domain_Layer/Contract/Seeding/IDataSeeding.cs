@@ -3,6 +3,6 @@
     public interface IDataSeeding
     {
         Task DataSeedAsync();
-        //Task IdentityDataSeedingAsync();
+        Task IdentityDataSeedingAsync();
     }
 }

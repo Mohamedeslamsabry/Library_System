@@ -86,7 +86,10 @@ namespace Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 100L);
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -94,7 +97,14 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
 
-                    b.Property<int>("ShelfId")
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ShelfId")
                         .HasColumnType("int");
 
                     b.Property<string>("TiTle")
@@ -107,7 +117,7 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasComputedColumnSql("GETDATE()");
 
-                    b.Property<int>("puplisherId")
+                    b.Property<int?>("puplisherId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -137,6 +147,9 @@ namespace Persistence.Migrations
                     b.Property<int>("Amount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("BookId1")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -145,7 +158,10 @@ namespace Persistence.Migrations
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("EmployeeId")
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EmployeeId1")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -153,17 +169,24 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasComputedColumnSql("GETDATE()");
 
+                    b.Property<int?>("UsersId")
+                        .HasColumnType("int");
+
                     b.HasKey("BookId", "UserId", "DateBorrow");
+
+                    b.HasIndex("BookId1");
 
                     b.HasIndex("EmployeeId");
 
+                    b.HasIndex("EmployeeId1");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UsersId");
 
                     b.ToTable("Borrows", t =>
                         {
-                            t.HasCheckConstraint("CheckDate", "DateBorrow > DueDate");
-
-                            t.HasCheckConstraint("ValidAmount", "Amount <= 3");
+                            t.HasCheckConstraint("CheckDate", "DateBorrow < DueDate");
                         });
                 });
 
@@ -350,7 +373,7 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
 
-                    b.Property<int>("FloorNumber")
+                    b.Property<int?>("FloorNumber")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -440,21 +463,15 @@ namespace Persistence.Migrations
                 {
                     b.HasOne("Domain_Layer.Models.Categories_Models.Categories", "Category")
                         .WithMany("Book")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CategoryId");
 
                     b.HasOne("Domain_Layer.Models.Shelf_Models.Shelf", "Shelf")
                         .WithMany("Book")
-                        .HasForeignKey("ShelfId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ShelfId");
 
                     b.HasOne("Domain_Layer.Models.Puplishers_Models.Puplishers", "puplisher")
                         .WithMany("Book")
-                        .HasForeignKey("puplisherId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("puplisherId");
 
                     b.Navigation("Category");
 
@@ -471,17 +488,28 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("Domain_Layer.Models.Book_Models.Book", null)
+                        .WithMany("Borrows")
+                        .HasForeignKey("BookId1");
+
                     b.HasOne("Domain_Layer.Models.Employee_Models.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Domain_Layer.Models.Employee_Models.Employee", null)
+                        .WithMany("Borrows")
+                        .HasForeignKey("EmployeeId1");
 
                     b.HasOne("Domain_Layer.Models.Users_Models.Users", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Domain_Layer.Models.Users_Models.Users", null)
+                        .WithMany("Borrows")
+                        .HasForeignKey("UsersId");
 
                     b.Navigation("Book");
 
@@ -565,9 +593,7 @@ namespace Persistence.Migrations
                 {
                     b.HasOne("Domain_Layer.Models.Floors_Models.Floors", "Floor")
                         .WithMany("Shelfs")
-                        .HasForeignKey("FloorNumber")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FloorNumber");
 
                     b.Navigation("Floor");
                 });
@@ -590,6 +616,8 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain_Layer.Models.Book_Models.Book", b =>
                 {
                     b.Navigation("Book_Authors");
+
+                    b.Navigation("Borrows");
                 });
 
             modelBuilder.Entity("Domain_Layer.Models.Categories_Models.Categories", b =>
@@ -599,6 +627,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain_Layer.Models.Employee_Models.Employee", b =>
                 {
+                    b.Navigation("Borrows");
+
                     b.Navigation("FloorsMange");
 
                     b.Navigation("Subordinates");
@@ -621,6 +651,11 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain_Layer.Models.Shelf_Models.Shelf", b =>
                 {
                     b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("Domain_Layer.Models.Users_Models.Users", b =>
+                {
+                    b.Navigation("Borrows");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,4 +1,5 @@
-﻿using Domain_Layer.Models.Floors_Models;
+﻿using Domain_Layer.Models.Borrow_Models;
+using Domain_Layer.Models.Floors_Models;
 using Domain_Layer.Models.Shared;
 using Domain_Layer.Models.Users_Models;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -46,6 +47,10 @@ namespace Domain_Layer.Models.Employee_Models
 
         // العلاقة مع الموظفين اللي تحت المشرف ده
         public virtual ICollection<Employee> Subordinates { get; set; } = new HashSet<Employee>();
+        #endregion
+
+        #region Borrwoing
+        public virtual ICollection<Borrow> Borrows { get; set; } = new HashSet<Borrow>();
         #endregion
 
         #endregion

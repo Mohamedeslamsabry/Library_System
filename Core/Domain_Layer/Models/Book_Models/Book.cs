@@ -1,4 +1,5 @@
 ﻿using Domain_Layer.Models.Book_Authors_Models;
+using Domain_Layer.Models.Borrow_Models;
 using Domain_Layer.Models.Categories_Models;
 using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
@@ -9,7 +10,10 @@ namespace Domain_Layer.Models.Book_Models
     public class Book : BaseEntity
     {
         #region Properties
+        public string Name { get; set; } = null!;
         public string TiTle { get; set; } = null!;
+        public decimal Price { get; set; }
+        public int Amount { get; set; }
 
         #endregion
 
@@ -17,7 +21,7 @@ namespace Domain_Layer.Models.Book_Models
 
         #region Shelf(R01) Assigned
         public virtual Shelf Shelf { get; set; } = null!;
-        public int ShelfId { get; set; }
+        public int? ShelfId { get; set; }
         #endregion
 
         #region Book_Authors (R02) (Own)
@@ -26,13 +30,17 @@ namespace Domain_Layer.Models.Book_Models
 
         #region Categories (R03) Classified
         public virtual Categories Category { get; set; } = null!;
-        public int CategoryId { get; set; }
+        public int? CategoryId { get; set; }
         #endregion
 
         #region Puplishers (R04) Have
         public virtual Puplishers puplisher { get; set; } = null!;
-        public int puplisherId { get; set; }
-        #endregion  
+        public int? puplisherId { get; set; }
+        #endregion
+
+        #region Borrow
+        public virtual ICollection<Borrow> Borrows { get; set; } = new HashSet<Borrow>();
+        #endregion
 
         #endregion
     }

@@ -29,8 +29,8 @@ namespace Persistence.Model_Configration
 
             builder.ToTable(P =>
             {
-                P.HasCheckConstraint("ValidAmount", "Amount <= 3");
-                P.HasCheckConstraint("CheckDate", "DateBorrow > DueDate");
+                //P.HasCheckConstraint("ValidAmount", "Amount <= 3");
+                P.HasCheckConstraint("CheckDate", "DateBorrow < DueDate");
             });
 
 

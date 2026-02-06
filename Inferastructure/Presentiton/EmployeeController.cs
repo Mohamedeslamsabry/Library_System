@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Presentiton.Attribute;
 using Service_Abstraction.Interfaces;
 using Shared;
-using Shared.DTO;
+using Shared.DTO.Employee;
 
 namespace Presentiton
 {
@@ -11,9 +12,11 @@ namespace Presentiton
     {
         #region Get All Employee
 
+        //[Authorize(Roles ="Admin")]
         [HttpGet]
+        [Cash]
         //https://localhost:7063/api/Employee
-        public async Task<ActionResult<IEnumerable<EmployeeDTO>>> GetAllEmployees([FromQuery] EmployeeQueryParamter employeeQuery)
+        public async Task<ActionResult<PaginatedResult<EmployeeDTO>>> GetAllEmployees([FromQuery] EmployeeQueryParamter employeeQuery)
         {
             var Employees = await _employeeService.GetAllAsync(employeeQuery);
             return Ok(Employees);
@@ -22,6 +25,7 @@ namespace Presentiton
 
         #region Get Employee By Id
         [HttpGet("{id}")]
+        [Cash]
         public async Task<ActionResult<EmployeeDTO>> GetEmployeeById(int id)
         {
             var employee = await _employeeService.GetByIdAsync(id);

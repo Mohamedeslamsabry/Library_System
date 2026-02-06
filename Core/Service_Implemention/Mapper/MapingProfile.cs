@@ -1,13 +1,43 @@
 ﻿using AutoMapper;
+using Domain_Layer.Models.Authors_Models;
+using Domain_Layer.Models.Book_Authors_Models;
+using Domain_Layer.Models.Book_Models;
+using Domain_Layer.Models.Borrow_Models;
+using Domain_Layer.Models.Categories_Models;
 using Domain_Layer.Models.Employee_Models;
+using Domain_Layer.Models.Floors_Models;
+using Domain_Layer.Models.Puplishers_Models;
 using Domain_Layer.Models.Shared;
-using Shared.DTO;
+using Domain_Layer.Models.Shelf_Models;
+using Domain_Layer.Models.Users_Models;
+using Shared.DTO.authors;
+using Shared.DTO.Book;
+using Shared.DTO.Borrow;
+using Shared.DTO.Categories;
+using Shared.DTO.Employee;
+using Shared.DTO.Floor;
+using Shared.DTO.Publisher;
+using Shared.DTO.Shelf;
+using Shared.DTO.User;
 
 namespace Service_Implemention.Mapper
 {
     public class MapingProfile : Profile
     {
         public MapingProfile() : base()
+        {
+            EmployeeMaping();
+            FloorMaping();
+            UserMaping();
+            Shelfmaping();
+            PublisherMaping();
+            BookMaping();
+            AuthorMaping();
+            CategoriesMaping();
+            BorrowMaping();
+        }
+
+        private void EmployeeMaping()
         {
             #region Get Employee
 
@@ -56,7 +86,7 @@ namespace Service_Implemention.Mapper
             CreateMap<Address, AddressDTO>().ReverseMap();
             #endregion
 
-            #region Create Employee
+            #region Create Or Update Employee
             // CreateEmployeeDto -> Employee
             CreateMap<CreateOrUpdateEmployeeDTO, Employee>();
             // كوّن Address من حقول الـDTO المسطّحة
@@ -67,8 +97,247 @@ namespace Service_Implemention.Mapper
             //    BuildingNumber = src.BuildingNumber
             //})); 
             #endregion
-
         }
 
+        private void FloorMaping()
+        {
+            #region Get Floors
+
+            // Entity -> DTO
+            CreateMap<Floors, FloorDTO>()
+                // نفس تسمية الخاصية في الـ DTO (Number_of_Blocks)
+                .ForMember(d => d.Number_of_Blocks,
+                    opt => opt.MapFrom(s => s.Number_of_Blocks))
+
+                // المدير (Id + Name)
+                .ForMember(d => d.ManagerId,
+                    opt => opt.MapFrom(s => s.EmployeeMangeId))
+                .ForMember(d => d.ManagerName,
+                    opt => opt.MapFrom(s => s.EmployeeMange != null ? $"{s.EmployeeMange.FirstName}_{s.EmployeeMange.LastName}" : null))
+
+                // العدّادات
+                .ForMember(d => d.EmployeesWorkCount,
+                    opt => opt.MapFrom(s => s.employeesWork.Count))
+                .ForMember(d => d.ShelvesCount,
+                    opt => opt.MapFrom(s => s.Shelfs.Count))
+
+                // قائمة الموظفين المختصرة
+                .ForMember(d => d.EmployeesWork,
+                    opt => opt.MapFrom(s => s.employeesWork));
+
+            // Sub DTO: Employee -> EmployeeBriefDto
+            CreateMap<Employee, EmployeeBriefDto>()
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}"))
+                .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s => s.PhoneNumber));
+
+
+            #endregion
+
+            #region Create Or Update Floor
+
+            CreateMap<CreateOrUpdateFloorDTO, Floors>()
+                       .ForMember(s => s.Number_of_Blocks, opt => opt.MapFrom(d => d.Number_of_Blocks))
+                       .ForMember(s => s.EmployeeMangeId, opt => opt.MapFrom(d => d.ManagerId));
+            #endregion
+        }
+        
+        private void UserMaping()
+        {
+            #region User
+
+            CreateMap<Users, UserDTO>()
+                .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.Gender.ToString()))
+                 .ForMember(d => d.Employee, opt => opt.MapFrom(s => s.Employee));
+
+
+            CreateMap<CreateOrUpdateUserDTO, Users>();
+
+
+            // اختياري: خريطة الموظف المختصر
+            CreateMap<Employee, EmployeeShortDto>()
+                           .ForMember(d => d.Name, opt => opt.MapFrom(s => $"{s.FirstName}_{s.LastName}"));
+
+
+            #endregion
+        }
+
+        private void Shelfmaping()
+        {
+            #region Get Shelf
+
+            // Shelf -> ShelfDetailsDTO (تفاصيل)
+            CreateMap<Shelf, ShelfDTO>()
+                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+                .ForMember(d => d.FloorNumber, opt => opt.MapFrom(s => s.FloorNumber))
+                .ForMember(d => d.BooksCount, opt => opt.MapFrom(s => s.Book.Count))
+                .ForMember(d => d.Books, opt => opt.MapFrom(s => s.Book))
+                .ForMember(d => d.Floor, opt => opt.MapFrom(s => s.Floor));
+
+            // Sub mappings
+            CreateMap<Book, BookBriefDto>()
+                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+                .ForMember(d => d.Title, opt => opt.MapFrom(s => s.TiTle));
+
+            CreateMap<Floors, FloorBriefDto>()
+                       .ForMember(d => d.FloorNumber, opt => opt.MapFrom(s => s.Id))
+                       .ForMember(d => d.Number_of_Blocks, opt => opt.MapFrom(s => s.Number_of_Blocks));
+
+
+
+            #endregion
+
+            #region Create Or Update Shelf
+            CreateMap<CreateOrUpdateShelfDTO, Shelf>();
+            #endregion
+        }
+
+        private void PublisherMaping()
+        {
+            #region  Publishers
+
+            CreateMap<Puplishers, PublisherDTO>()
+                        .ForMember(d => d.Books, opt => opt.MapFrom(s => s.Book));
+
+
+            CreateMap<CreateOrUpdatePublisherDTO, Puplishers>();
+
+
+            CreateMap<Book, BookShortDto>();
+
+            #endregion
+        }
+
+        private void BookMaping()
+        {
+            #region Book
+
+            CreateMap<Book, BookDTO>()
+                      .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category != null ? s.Category.CategoryName : null))
+                      .ForMember(d => d.PublisherId, opt => opt.MapFrom(s => s.puplisherId))
+                      .ForMember(d => d.PublisherName, opt => opt.MapFrom(s => s.puplisher != null ? s.puplisher.Publisher_Name : null))
+                      .ForMember(d => d.AuthorIds, opt => opt.MapFrom(s => s.Book_Authors.Select(ba => ba.AuthorId)))
+                      .ForMember(d => d.AuthorNames, opt => opt.MapFrom(s =>
+                          s.Book_Authors.Where(ba => ba.Author != null).Select(ba => ba.Author.Auth_Name)))
+
+                     // Borrows
+                     .ForMember(d => d.BorrowsCount, opt => opt.MapFrom(s => s.Borrows != null ? s.Borrows.Count : 0))
+                     .ForMember(d => d.BorrowIds, opt => opt.MapFrom(s =>
+                         (s.Borrows ?? Enumerable.Empty<Borrow>()).Select(b => b.Id)))
+                     .ForMember(d => d.LastBorrowDate, opt => opt.MapFrom(s =>
+                         (s.Borrows ?? Enumerable.Empty<Borrow>())
+                             .OrderByDescending(b => b.DateBorrow)
+                             .Select(b => (DateTime?)b.DateBorrow)
+                             .FirstOrDefault()))
+                     .ForMember(d => d.LastDueDate, opt => opt.MapFrom(s =>
+
+                    (s.Borrows ?? Enumerable.Empty<Borrow>())
+                                     .OrderByDescending(b => b.DateBorrow)
+                                     .Select(b => (DateTime?)b.DueDate)
+                                     .FirstOrDefault()))
+                             .ForMember(d => d.OverdueCount, opt => opt.MapFrom(s =>
+                                 (s.Borrows ?? Enumerable.Empty<Borrow>())
+                                     .Count(b => b.DueDate < DateTime.UtcNow))) // استخدم Utc لضمان ثبات التوقيت
+                             .ForMember(d => d.IsLikelyActive, opt => opt.MapFrom(s =>
+                                 (s.Borrows ?? Enumerable.Empty<Borrow>())
+
+                    .OrderByDescending(b => b.DateBorrow)
+                                     .Select(b => (DateTime?)b.DueDate)
+                                     .FirstOrDefault() >= DateTime.UtcNow));
+
+
+
+
+
+
+
+            CreateMap<CreateOrUpdateBookDto, Book>()
+                       // مفاتيح العلاقات
+                       .ForMember(d => d.puplisherId, opt => opt.MapFrom(s => s.PublisherId))
+                       // تجاهل الملاحة: بنضبطها في EF عند التتبع/التحميل
+                       .ForMember(d => d.Shelf, opt => opt.Ignore())
+                       .ForMember(d => d.Category, opt => opt.Ignore())
+                       .ForMember(d => d.puplisher, opt => opt.Ignore())
+                       .ForMember(d => d.Borrows, opt => opt.Ignore())
+                       .ForMember(d => d.Book_Authors, opt => opt.Ignore())
+                       .ForMember(d => d.Book_Authors, opt => opt.Ignore()) // مهم جدًا
+                       .AfterMap((src, dest) =>
+                       {
+                           // لو الكيان جديد، Book_Authors غالبًا تكون فاضية
+                           // في الحالتين (Create/Update): نعمل مزامنة بسيطة للـ AuthorIds
+
+                           var newAuthorIds = (src.AuthorIds ?? new List<int>()).Distinct().ToList();
+
+                           // إزالة العلاقات غير المطلوبة
+                           dest.Book_Authors = dest.Book_Authors
+                               .Where(ba => newAuthorIds.Contains(ba.AuthorId))
+                               .ToHashSet();
+
+                           // إضافة العلاقات الجديدة
+                           var existingAuthorIds = dest.Book_Authors.Select(ba => ba.AuthorId).ToHashSet();
+                           var toAdd = newAuthorIds.Where(id => !existingAuthorIds.Contains(id));
+
+                           foreach (var authorId in toAdd)
+
+                           {
+                               dest.Book_Authors.Add(new Book_Authors
+                               {
+                                   BookId = dest.Id,     // EF ممكن يضبطه عند الإضافة
+                                   AuthorId = authorId
+                               });
+                           }
+                       });
+            #endregion
+        }
+
+        private void AuthorMaping()
+        {
+            #region authors
+
+            CreateMap<Authors, AuthorDTO>()
+                      .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Auth_Name))
+                      .ForMember(d => d.BooksCount, opt => opt.MapFrom(s => s.Book_Authors != null ? s.Book_Authors.Count : 0))
+                      .ForMember(d => d.BookIds, opt => opt.MapFrom(s =>
+                          (s.Book_Authors ?? Enumerable.Empty<Book_Authors>()).Select(ba => ba.BookId)));
+
+            // Create/Update DTO -> Entity
+            CreateMap<CreateOrUpdateAuthorDTO, Authors>()
+                .ForMember(d => d.Auth_Name, opt => opt.MapFrom(s => s.Name))
+            // تجاهل علاقات الربط في الإنشاء/التحديث
+
+            .ForMember(d => d.Book_Authors, opt => opt.Ignore());
+
+            #endregion
+        }
+
+        private void CategoriesMaping()
+        {
+            #region Categories
+
+            CreateMap<Categories, CategorieDTO>()
+                .ForMember(d => d.BooksCount, opt => opt.MapFrom(s => s.Book != null ? s.Book.Count : 0))
+                .ForMember(d => d.BookIds, opt => opt.MapFrom(s =>
+                    (s.Book ?? Enumerable.Empty<Book>()).Select(b => b.Id)));
+
+            #endregion
+        }
+
+        private void BorrowMaping()
+        {
+            #region Borrow
+
+
+            CreateMap<Borrow, BorrowDTO>()
+                     .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User != null ? s.User.User_Name : null))
+                     .ForMember(d => d.EmployeeName, opt => opt.MapFrom(s => s.Employee != null ? $"{s.Employee.FirstName}_{s.Employee.LastName}" : null))
+                                .ForMember(d => d.BookTitle, opt => opt.MapFrom(s => s.Book != null ? s.Book.TiTle : null));
+
+
+            CreateMap<CreateOrUpdateBorrowDTO, Borrow>()
+                // تجاهل النفيجيشن في الإنشاء—هنخلي EF يديرها (Lazy Loading / Attach)
+                .ForMember(d => d.User, opt => opt.Ignore())
+                .ForMember(d => d.Employee, opt => opt.Ignore())
+                .ForMember(d => d.Book, opt => opt.Ignore());
+            #endregion
+        }
     }
 }
